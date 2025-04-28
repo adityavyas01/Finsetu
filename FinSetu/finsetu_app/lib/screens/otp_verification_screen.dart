@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // import 'package:finsetu_app/screens/login_screen.dart';
 import 'package:finsetu_app/screens/home_screen.dart';
-import 'package:sms_autofill/sms_autofill.dart'; // Add this import
 
 class OtpVerificationScreen extends StatefulWidget {
   final String username;
@@ -21,7 +20,7 @@ class OtpVerificationScreen extends StatefulWidget {
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
 }
 
-class _OtpVerificationScreenState extends State<OtpVerificationScreen> with CodeAutoFill {
+class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final List<TextEditingController> _otpControllers = List.generate(
     6,
     (index) => TextEditingController(),
@@ -39,24 +38,16 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> with Code
   int _resendTimer = 30;
   Timer? _timer;
 
-  String? _appSignature;
-  String? _otpCode;
-
   @override
   void initState() {
     super.initState();
     // Start countdown for resend OTP button
     _startResendTimer();
-    
-    // Initialize SMS auto-fill
-    _initSmsListener();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    SmsAutoFill().unregisterListener();
-    cancel();  // Cancel CodeAutoFill listener
     for (final controller in _otpControllers) {
       controller.dispose();
     }
@@ -64,39 +55,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> with Code
       node.dispose();
     }
     super.dispose();
-  }
-
-  Future<void> _initSmsListener() async {
-    try {
-      _appSignature = await SmsAutoFill().getAppSignature;
-      await SmsAutoFill().listenForCode();
-      
-      // Register for code auto-fill callbacks
-      listenForCode();
-    } catch (e) {
-      debugPrint('Failed to initialize SMS listener: $e');
-    }
-  }
-
-  @override
-  void codeUpdated() {
-    if (code != null && code!.length == 6) {
-      setState(() {
-        _otpCode = code;
-        
-        // Fill the text fields with the code
-        for (int i = 0; i < 6; i++) {
-          _otpControllers[i].text = code![i];
-        }
-      });
-      
-      // Auto verify after filling the code
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          _verifyOtp();
-        }
-      });
-    }
   }
 
   void _startResendTimer() {
@@ -429,21 +387,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> with Code
                 ),
               ),
               
-              const SizedBox(height: 16),
-              
-              // Auto-detection notice
-              const Center(
-                child: Text(
-                  "Detecting OTP automatically...",
-                  style: TextStyle(
-                    color: secondaryTextColor,
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
+              const SizedBox(height: 40),
               
               // Resend OTP section
               Row(

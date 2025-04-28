@@ -56,38 +56,75 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                       Container(
                         height: 80,
                         width: 80,
-                        padding: const EdgeInsets.all(8),
+                        alignment: Alignment.center,
+                        padding: EdgeInsets.zero,
                         decoration: BoxDecoration(
                           color: Colors.black,
-                          borderRadius: const BorderRadius.all(Radius.circular(16)),
+                          borderRadius: const BorderRadius.all(Radius.circular(18)),
+                          border: Border.all(
+                            color: const Color(0xFFE8FA7A).withOpacity(0.4),
+                            width: 1.8,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFE8FA7A).withOpacity(0.15),
-                              blurRadius: 25,
-                              spreadRadius: 2,
-                              offset: const Offset(0, 5),
+                              color: const Color(0xFFE8FA7A).withOpacity(0.25),
+                              blurRadius: 35,
+                              spreadRadius: 5,
+                              offset: const Offset(0, 6),
                             ),
                             const BoxShadow(
-                              color: Color(0x33000000),
+                              color: Color(0x44000000),
                               blurRadius: 15,
                               offset: Offset(0, 4),
                             ),
                           ],
                         ),
-                        // Apply ShaderMask for gradient text
-                        child: ShaderMask(
-                          blendMode: BlendMode.srcIn,
-                          shaderCallback: (bounds) => logoGradient.createShader(
-                            Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                          ),
-                          child: const Text(
-                            "F",
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Background glow effect
+                            Container(
+                              height: 55,
+                              width: 55,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    const Color(0xFFE8FA7A).withOpacity(0.4),
+                                    const Color(0xFFE8FA7A).withOpacity(0.0),
+                                  ],
+                                  stops: const [0.1, 1.0],
+                                ),
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
+                            // Text with gradient
+                            ShaderMask(
+                              blendMode: BlendMode.srcIn,
+                              shaderCallback: (bounds) => const LinearGradient(
+                                colors: [Color(0xFFE8FA7A), Color(0xFFA3E635), Color(0xFF86C332)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                stops: [0.0, 0.7, 1.0],
+                              ).createShader(
+                                Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                              ),
+                              child: const Text(
+                                "F",
+                                style: TextStyle(
+                                  fontSize: 50,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1,
+                                  shadows: [
+                                    Shadow(
+                                      color: Color(0x60000000),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -158,28 +195,13 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                   _navigateToSignup(context);
                 },
                 gradient: logoGradient,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      'Get Started',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.black26,
-                      child: Icon(
-                        Icons.arrow_forward,
-                        size: 16,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
+                child: const Text(
+                  'Get Started',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
