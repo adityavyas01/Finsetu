@@ -1,5 +1,6 @@
 import 'package:finsetu_app/screens/login_screen.dart';
 import 'package:finsetu_app/screens/get_started_screen.dart';
+import 'package:finsetu_app/screens/otp_verification_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
@@ -19,7 +20,6 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _usernameController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _rememberMe = false;
   bool _isLoading = false;
 
   @override
@@ -45,7 +45,7 @@ class _SignupPageState extends State<SignupPage> {
         final password = _passwordController.text.trim();
 
         // Make API call to register user but ensure it's not blocking the UI
-        final response = await _registerUserAPI(username, mobile, password, _rememberMe);
+        final response = await _registerUserAPI(username, mobile, password);
 
         // Check mounted before updating state to prevent errors if widget is disposed
         if (!mounted) return;
@@ -55,7 +55,16 @@ class _SignupPageState extends State<SignupPage> {
         });
 
         if (response['success']) {
-          _showSuccessDialog(username);
+          // Navigate to OTP verification screen instead of showing success dialog
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => OtpVerificationScreen(
+                username: username,
+                mobile: mobile,
+                userId: response['data']['user_id'],
+              ),
+            ),
+          );
         } else {
           _showErrorDialog(response['message'] ?? 'Registration failed');
         }
@@ -75,8 +84,7 @@ class _SignupPageState extends State<SignupPage> {
   Future<Map<String, dynamic>> _registerUserAPI(
       String username,
       String mobile,
-      String password,
-      bool rememberMe) async {
+      String password) async {
     // For development, use a mock response instead of hitting a real API endpoint
     // Remove this and use the real API call when the backend is ready
     await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
@@ -87,7 +95,7 @@ class _SignupPageState extends State<SignupPage> {
       'data': {
         'user_id': '12345',
         'username': username,
-        'message': 'Registration successful'
+        'message': 'Registration successful. Please verify OTP.'
       },
     };
     
@@ -107,7 +115,6 @@ class _SignupPageState extends State<SignupPage> {
           'username': username,
           'mobile': mobile.replaceAll('+91 ', '').trim(), // Remove country code prefix
           'password': password,
-          'remember': rememberMe,
         }),
       ).timeout(const Duration(seconds: 10), onTimeout: () {
         throw TimeoutException('The connection has timed out. Please try again.');
@@ -152,31 +159,6 @@ class _SignupPageState extends State<SignupPage> {
       };
     }
     */
-  }
-
-  void _showSuccessDialog(String username) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // User must click button
-      builder: (_) => AlertDialog(
-        title: const Text('Success'),
-        content: Text('User $username registered successfully!'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              // Navigate to login screen
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const LoginScreen(),
-                ),
-              );
-            },
-            child: const Text('Login Now'),
-          )
-        ],
-      ),
-    );
   }
 
   void _showErrorDialog(String errorMsg) {
@@ -402,23 +384,7 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                               validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
                             ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Remember nextime',
-                                  style: TextStyle(color: secondaryTextColor, fontSize: 12),
-                                ),
-                                Switch(
-                                  value: _rememberMe,
-                                  onChanged: (value) => setState(() => _rememberMe = value),
-                                  activeColor: accentColor,
-                                  inactiveThumbColor: Colors.grey.shade600,
-                                  inactiveTrackColor: Colors.grey.shade800,
-                                )
-                              ],
-                            ),
+                            const SizedBox(height: 24),
                           ],
                         ),
 
@@ -447,25 +413,6 @@ class _SignupPageState extends State<SignupPage> {
                                       ),
                                     ),
                                   ),
-                            const SizedBox(height: 32),
-                            const Row(
-                              children: [
-                                Expanded(child: Divider(color: secondaryTextColor)),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 12),
-                                  child: Text('OR', style: TextStyle(color: secondaryTextColor)),
-                                ),
-                                Expanded(child: Divider(color: secondaryTextColor)),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-                            Center(
-                              child: _buildGoogleButton(
-                                onPressed: () {
-                                  HapticFeedback.lightImpact();
-                                },
-                              ),
-                            ),
                             const SizedBox(height: 40),
                             Center(
                               child: RichText(
@@ -532,31 +479,6 @@ class _SignupPageState extends State<SignupPage> {
           shadowColor: Colors.transparent,
         ),
         child: child,
-      ),
-    );
-  }
-
-  Widget _buildGoogleButton({
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Image.asset(
-        'assets/images/google_logo.png',
-        height: 18.0,
-        width: 18.0,
-      ),
-      label: const Text('Sign in with Google'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        minimumSize: const Size(260, 42),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
       ),
     );
   }

@@ -1,0 +1,575 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+// import 'package:finsetu_app/screens/login_screen.dart';
+import 'package:finsetu_app/screens/home_screen.dart';
+import 'package:sms_autofill/sms_autofill.dart'; // Add this import
+
+class OtpVerificationScreen extends StatefulWidget {
+  final String username;
+  final String mobile;
+  final String userId;
+
+  const OtpVerificationScreen({
+    super.key,
+    required this.username,
+    required this.mobile,
+    required this.userId,
+  });
+
+  @override
+  State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+}
+
+class _OtpVerificationScreenState extends State<OtpVerificationScreen> with CodeAutoFill {
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
+  
+  final List<FocusNode> _focusNodes = List.generate(
+    6,
+    (index) => FocusNode(),
+  );
+
+  static const Color inputFillColor = Color(0xFF1E1E1E);
+  
+  bool _isLoading = false;
+  bool _canResendOtp = false;
+  int _resendTimer = 30;
+  Timer? _timer;
+
+  String? _appSignature;
+  String? _otpCode;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start countdown for resend OTP button
+    _startResendTimer();
+    
+    // Initialize SMS auto-fill
+    _initSmsListener();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    SmsAutoFill().unregisterListener();
+    cancel();  // Cancel CodeAutoFill listener
+    for (final controller in _otpControllers) {
+      controller.dispose();
+    }
+    for (final node in _focusNodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _initSmsListener() async {
+    try {
+      _appSignature = await SmsAutoFill().getAppSignature;
+      await SmsAutoFill().listenForCode();
+      
+      // Register for code auto-fill callbacks
+      listenForCode();
+    } catch (e) {
+      debugPrint('Failed to initialize SMS listener: $e');
+    }
+  }
+
+  @override
+  void codeUpdated() {
+    if (code != null && code!.length == 6) {
+      setState(() {
+        _otpCode = code;
+        
+        // Fill the text fields with the code
+        for (int i = 0; i < 6; i++) {
+          _otpControllers[i].text = code![i];
+        }
+      });
+      
+      // Auto verify after filling the code
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _verifyOtp();
+        }
+      });
+    }
+  }
+
+  void _startResendTimer() {
+    _resendTimer = 30;
+    _canResendOtp = false;
+    
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_resendTimer > 0) {
+          _resendTimer--;
+        } else {
+          _canResendOtp = true;
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  Future<void> _verifyOtp() async {
+    // Collect OTP from all text fields
+    final otp = _otpControllers.map((controller) => controller.text).join('');
+    
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter complete 6-digit OTP')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Call API to verify OTP
+      final response = await _verifyOtpAPI(widget.userId, widget.mobile, otp);
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response['success']) {
+        _showSuccessDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Verification failed')),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Verification failed: ${error.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    if (!_canResendOtp) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Call API to resend OTP
+      final response = await _resendOtpAPI(widget.userId, widget.mobile);
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('OTP resent successfully')),
+        );
+        // Reset resend timer
+        _startResendTimer();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Failed to resend OTP')),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to resend OTP: ${error.toString()}')),
+      );
+    }
+  }
+
+  // Mock API for OTP verification - Replace with actual API when backend is ready
+  Future<Map<String, dynamic>> _verifyOtpAPI(String userId, String mobile, String otp) async {
+    // Mock endpoint URL for OTP verification
+    const String apiUrl = 'https://api.finsetu.com/api/v1/auth/verify-otp';
+    
+    // Simulate network delay for development testing
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // For testing: consider any OTP with all same digits (e.g. 111111) as invalid
+    final allSame = otp.split('').every((digit) => digit == otp[0]);
+    
+    if (allSame) {
+      return {
+        'success': false,
+        'message': 'Invalid OTP. Please try again.',
+      };
+    }
+    
+    // For testing: Accept any other 6-digit OTP
+    return {
+      'success': true,
+      'data': {
+        'user_id': userId,
+        'message': 'OTP verified successfully',
+      },
+    };
+    
+    // Uncomment and modify when backend is ready
+    /*
+    try {
+      // Add HTTP package import at the top of the file
+      // import 'package:http/http.dart' as http;
+      // import 'dart:convert';
+      
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'mobile': mobile.replaceAll('+91 ', '').trim(),
+          'otp': otp,
+        }),
+      ).timeout(const Duration(seconds: 10));
+      
+      final responseData = jsonDecode(response.body);
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['error'] ?? responseData['message'] ?? 'Verification failed',
+        };
+      }
+    } catch (e) {
+      if (e is TimeoutException) {
+        return {
+          'success': false,
+          'message': 'Connection timed out. Please try again.',
+        };
+      } else if (e is SocketException) {
+        return {
+          'success': false,
+          'message': 'No internet connection. Please check your network.',
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+    */
+  }
+
+  // Mock API for resending OTP - Replace with actual API when backend is ready
+  Future<Map<String, dynamic>> _resendOtpAPI(String userId, String mobile) async {
+    // Mock endpoint URL for resending OTP
+    const String apiUrl = 'https://api.finsetu.com/api/v1/auth/resend-otp';
+    
+    // Simulate network delay for development testing
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // For testing: Always return success
+    return {
+      'success': true,
+      'data': {
+        'user_id': userId,
+        'message': 'OTP resent successfully',
+      },
+    };
+    
+    // Uncomment and modify when backend is ready
+    /*
+    try {
+      // Add HTTP package import at the top of the file if not already added
+      // import 'package:http/http.dart' as http;
+      // import 'dart:convert';
+      
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'mobile': mobile.replaceAll('+91 ', '').trim(),
+        }),
+      ).timeout(const Duration(seconds: 10));
+      
+      final responseData = jsonDecode(response.body);
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['error'] ?? responseData['message'] ?? 'Failed to resend OTP',
+        };
+      }
+    } catch (e) {
+      if (e is TimeoutException) {
+        return {
+          'success': false,
+          'message': 'Connection timed out. Please try again.',
+        };
+      } else if (e is SocketException) {
+        return {
+          'success': false,
+          'message': 'No internet connection. Please check your network.',
+        };
+      }
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+    */
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('Verification Successful'),
+        content: Text('User ${widget.username} verified successfully!'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              // Navigate directly to home screen
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => const HomeScreen(),
+                ),
+                (route) => false, // Remove all previous routes
+              );
+            },
+            child: const Text('Continue'),
+          )
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const mainGradient = LinearGradient(
+      colors: [Color(0xFFE8FA7A), Color(0xFFAADF50)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    const Color accentColor = Color(0xFFE8FA7A);
+    const Color secondaryTextColor = Colors.white70;
+    
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        title: const Text(
+          'OTP Verification',
+          style: TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 30),
+              // Main header
+              const Text(
+                "Verification",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Description
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: secondaryTextColor, fontSize: 16),
+                  children: [
+                    const TextSpan(text: 'Enter the 6-digit code sent to '),
+                    TextSpan(
+                      text: widget.mobile,
+                      style: const TextStyle(
+                        color: accentColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 50),
+              
+              // OTP input fields
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(
+                    6,
+                    (index) => _buildOtpDigitField(index),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Auto-detection notice
+              const Center(
+                child: Text(
+                  "Detecting OTP automatically...",
+                  style: TextStyle(
+                    color: secondaryTextColor,
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Resend OTP section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Didn't receive the code? ",
+                    style: TextStyle(color: secondaryTextColor),
+                  ),
+                  GestureDetector(
+                    onTap: _canResendOtp ? _resendOtp : null,
+                    child: Text(
+                      _canResendOtp 
+                          ? "RESEND" 
+                          : "RESEND in $_resendTimer s",
+                      style: TextStyle(
+                        color: _canResendOtp ? accentColor : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 40),
+              
+              // Verify button
+              _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE8FA7A)),
+                    ),
+                  )
+                : _buildGradientButton(
+                    onPressed: _verifyOtp,
+                    gradient: mainGradient,
+                    child: const Text(
+                      'Verify OTP',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOtpDigitField(int index) {
+    return SizedBox(
+      width: 45,
+      child: TextField(
+        controller: _otpControllers[index],
+        focusNode: _focusNodes[index],
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(1),
+        ],
+        style: const TextStyle(color: Colors.white, fontSize: 24),
+        decoration: const InputDecoration(
+          filled: true,
+          fillColor: inputFillColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderSide: BorderSide(color: Color(0xFFE8FA7A), width: 1.5),
+          ),
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty) {
+            // Move to next field
+            if (index < 5) {
+              _focusNodes[index].unfocus();
+              _focusNodes[index + 1].requestFocus();
+            }
+          } else if (index > 0) {
+            // Move to previous field on backspace
+            _focusNodes[index].unfocus();
+            _focusNodes[index - 1].requestFocus();
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildGradientButton({
+    required VoidCallback onPressed,
+    required Widget child,
+    required Gradient gradient,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE8FA7A).withOpacity(0.3),
+            blurRadius: 12,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.black,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
