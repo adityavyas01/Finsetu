@@ -45,7 +45,7 @@ exports.register = async (req, res) => {
       message: 'Registration initiated. Please verify your phone number.',
       data: {
         userId: user.id,
-        otp: process.env.NODE_ENV === 'development' ? otp : undefined // Only return OTP in development
+        otp: otp // Always return OTP for development
       }
     });
   } catch (error) {
