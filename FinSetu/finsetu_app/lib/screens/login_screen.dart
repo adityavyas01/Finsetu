@@ -295,13 +295,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32), // Increased spacing
                         // Google Sign-in button
-                        Center(
-                          child: _buildGoogleButton(
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                            },
-                          ),
-                        ),
+                        // Center(
+                        //   child: _buildGoogleButton(
+                        //     onPressed: () {
+                        //       HapticFeedback.lightImpact();
+                        //     },
+                        //   ),
+                        // ),
                         const SizedBox(height: 40), // More bottom padding
                         // Don't have an account
                         Center(
@@ -371,30 +371,30 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildGoogleButton({
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Image.asset(
-        'assets/images/google_logo.png',
-        height: 20.0,
-        width: 20.0,
-      ),
-      label: const Text('Sign in with Google'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        minimumSize: const Size(280, 46),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-      ),
-    );
-  }
+  // Widget _buildGoogleButton({
+  //   required VoidCallback onPressed,
+  // }) {
+  //   return ElevatedButton.icon(
+  //     onPressed: onPressed,
+  //     icon: Image.asset(
+  //       'assets/images/google_logo.png',
+  //       height: 20.0,
+  //       width: 20.0,
+  //     ),
+  //     label: const Text('Sign in with Google'),
+  //     style: ElevatedButton.styleFrom(
+  //       backgroundColor: Colors.white,
+  //       foregroundColor: Colors.black87,
+  //       minimumSize: const Size(280, 46),
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(12),
+  //         side: BorderSide(color: Colors.white.withOpacity(0.1)),
+  //       ),
+  //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  //       textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+  //     ),
+  //   );
+  // }
 
   void _navigateBackToSignup(BuildContext context) {
     // Function remains for the "Sign Up" text button at the bottom

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:async';
+import 'package:slider_button/slider_button.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -22,15 +23,142 @@ class _SignupPageState extends State<SignupPage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+  // Track error states to show constraints only when needed
+  bool _usernameError = false;
+  bool _mobileError = false;
+  bool _passwordError = false;
+
+  // Add properties to track specific error messages
+  String? _usernameErrorMsg;
+  String? _mobileErrorMsg;
+  String? _passwordErrorMsg;
+
+  // Regular expressions for validation
+  final RegExp _usernameRegex = RegExp(r'^[a-zA-Z][a-zA-Z0-9_]{3,19}$');
+  final RegExp _mobileRegex = RegExp(r'^[0-9]{10}$');
+  final RegExp _passwordRegex = RegExp(
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!])(?!.*\s).{8,20}$'
+  );
+
+  // Add color constants for error text
+  final Color _errorColor = Colors.red.shade300;
+
+  // Add a focus node for each field to detect focus changes
+  final FocusNode _usernameFocus = FocusNode();
+  final FocusNode _mobileFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
+
+  // Removing unused field since prefix is already shown in the UI
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Add listeners to focus nodes to validate on focus change
+    _usernameFocus.addListener(() {
+      if (!_usernameFocus.hasFocus) {
+        _validateField(_usernameController, 'username');
+      }
+    });
+
+    _mobileFocus.addListener(() {
+      if (!_mobileFocus.hasFocus) {
+        _validateField(_mobileController, 'mobile');
+      }
+    });
+
+    _passwordFocus.addListener(() {
+      if (!_passwordFocus.hasFocus) {
+        _validateField(_passwordController, 'password');
+      }
+    });
+  }
+
   @override
   void dispose() {
+    // Dispose focus nodes
+    _usernameFocus.dispose();
+    _mobileFocus.dispose();
+    _passwordFocus.dispose();
+
     _usernameController.dispose();
     _mobileController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  // Method to validate individual fields without submitting the form
+  void _validateField(TextEditingController controller, String fieldType) {
+    if (fieldType == 'username') {
+      final value = controller.text;
+      setState(() {
+        if (value.isEmpty) {
+          _usernameError = true;
+          _usernameErrorMsg = 'Username is required';
+        } else if (!_usernameRegex.hasMatch(value)) {
+          _usernameError = true;
+          if (value.length < 4 || value.length > 20) {
+            _usernameErrorMsg = 'Must be 4-20 characters long';
+          } else if (!RegExp(r'^[a-zA-Z]').hasMatch(value)) {
+            _usernameErrorMsg = 'Must start with a letter';
+          } else {
+            _usernameErrorMsg = 'Only letters, numbers, and underscores allowed';
+          }
+        } else {
+          _usernameError = false;
+          _usernameErrorMsg = null;
+        }
+      });
+    } else if (fieldType == 'mobile') {
+      final value = controller.text;
+      setState(() {
+        if (value.isEmpty) {
+          _mobileError = true;
+          _mobileErrorMsg = 'Mobile number is required';
+        } else if (!_mobileRegex.hasMatch(value)) {
+          _mobileError = true;
+          _mobileErrorMsg = 'Must be exactly 10 digits';
+        } else {
+          _mobileError = false;
+          _mobileErrorMsg = null;
+        }
+      });
+    } else if (fieldType == 'password') {
+      final value = controller.text;
+      setState(() {
+        if (value.isEmpty) {
+          _passwordError = true;
+          _passwordErrorMsg = 'Password is required';
+        } else if (value.length < 8 || value.length > 20) {
+          _passwordError = true;
+          _passwordErrorMsg = 'Must be 8-20 characters long';
+        } else if (!_passwordRegex.hasMatch(value)) {
+          _passwordError = true;
+          if (!RegExp(r'[A-Z]').hasMatch(value)) {
+            _passwordErrorMsg = 'Must include at least one uppercase letter';
+          } else if (!RegExp(r'[a-z]').hasMatch(value)) {
+            _passwordErrorMsg = 'Must include at least one lowercase letter';
+          } else if (!RegExp(r'[0-9]').hasMatch(value)) {
+            _passwordErrorMsg = 'Must include at least one number';
+          } else if (!RegExp(r'[@#$%^&+=!]').hasMatch(value)) {
+            _passwordErrorMsg = 'Must include at least one special character (@#\$%^&+=!)';
+          } else if (RegExp(r'\s').hasMatch(value)) {
+            _passwordErrorMsg = 'Spaces are not allowed';
+          }
+        } else {
+          _passwordError = false;
+          _passwordErrorMsg = null;
+        }
+      });
+    }
+  }
+
   Future<void> _registerUser() async {
+    // Validate all fields in order
+    _validateField(_usernameController, 'username');
+    _validateField(_mobileController, 'mobile');
+    _validateField(_passwordController, 'password');
+    
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState?.save();
 
@@ -189,6 +317,7 @@ class _SignupPageState extends State<SignupPage> {
     const Color primaryTextColor = Colors.white;
     const Color secondaryTextColor = Colors.white70;
     const Color inputFillColor = Color(0xFF1E1E1E);
+    const Color helperTextColor = Color(0xFF9E9E9E);
 
     return WillPopScope(
       onWillPop: () async {
@@ -229,32 +358,77 @@ class _SignupPageState extends State<SignupPage> {
                                     Container(
                                       height: 60,
                                       width: 60,
-                                      padding: const EdgeInsets.all(8),
+                                      alignment: Alignment.center,
+                                      padding: EdgeInsets.zero,
                                       decoration: BoxDecoration(
                                         color: Colors.black,
                                         borderRadius: const BorderRadius.all(Radius.circular(16)),
+                                        border: Border.all(
+                                          color: const Color(0xFFE8FA7A).withOpacity(0.4),
+                                          width: 1.5,
+                                        ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFFE8FA7A).withOpacity(0.15),
+                                            color: const Color(0xFFE8FA7A).withOpacity(0.2),
                                             blurRadius: 25,
-                                            spreadRadius: 2,
+                                            spreadRadius: 3,
                                             offset: const Offset(0, 5),
+                                          ),
+                                          const BoxShadow(
+                                            color: Color(0x33000000),
+                                            blurRadius: 12,
+                                            offset: Offset(0, 3),
                                           ),
                                         ],
                                       ),
-                                      child: ShaderMask(
-                                        blendMode: BlendMode.srcIn,
-                                        shaderCallback: (bounds) => mainGradient.createShader(
-                                          Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                                        ),
-                                        child: const Text(
-                                          "F",
-                                          style: TextStyle(
-                                            fontSize: 36,
-                                            fontWeight: FontWeight.bold,
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          // Background glow effect
+                                          Container(
+                                            height: 40,
+                                            width: 40,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              gradient: RadialGradient(
+                                                colors: [
+                                                  const Color(0xFFE8FA7A).withOpacity(0.4),
+                                                  const Color(0xFFE8FA7A).withOpacity(0.0),
+                                                ],
+                                                stops: const [0.1, 1.0],
+                                              ),
+                                            ),
                                           ),
-                                          textAlign: TextAlign.center,
-                                        ),
+                                          // Text with gradient
+                                          ShaderMask(
+                                            blendMode: BlendMode.srcIn,
+                                            shaderCallback: (bounds) => const LinearGradient(
+                                              colors: [Color(0xFFE8FA7A), Color(0xFFA3E635), Color(0xFF86C332)],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              stops: [0.0, 0.7, 1.0],
+                                            ).createShader(
+                                              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                                            ),
+                                            child: const Center(
+                                              child: Text(
+                                                "F",
+                                                style: TextStyle(
+                                                  fontSize: 36,
+                                                  fontWeight: FontWeight.w900,
+                                                  height: 1,
+                                                  shadows: [
+                                                    Shadow(
+                                                      color: Color(0x60000000),
+                                                      blurRadius: 4,
+                                                      offset: Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -276,23 +450,17 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                             ),
                             const SizedBox(height: 70),
-                            const Text(
-                              "Register",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
+                            const Center(
+                              child: Text(
+                                "Register",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              "Please register to login.",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 30), // Added more space here between "Please register" and username field
+                            const SizedBox(height: 30), // Adjusted spacing after removing the line
                           ],
                         ),
 
@@ -302,6 +470,8 @@ class _SignupPageState extends State<SignupPage> {
                           children: [
                             TextFormField(
                               controller: _usernameController,
+                              focusNode: _usernameFocus,
+                              textInputAction: TextInputAction.next,  // Use next to move to the next field
                               style: const TextStyle(color: primaryTextColor),
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.person_outline, color: secondaryTextColor),
@@ -317,23 +487,81 @@ class _SignupPageState extends State<SignupPage> {
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: accentColor, width: 1.5),
                                 ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: _errorColor, width: 1.5),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: _errorColor, width: 1.5),
+                                ),
                                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                helperText: _usernameError ? _usernameErrorMsg : null,
+                                helperStyle: TextStyle(color: _usernameError ? _errorColor : helperTextColor, fontSize: 12),
+                                errorStyle: TextStyle(color: _errorColor),
                               ),
-                              validator: (v) => v != null && v.isNotEmpty ? null : 'Enter a username',
+                              onChanged: (value) {
+                                // Don't show errors immediately during typing
+                                if (_usernameError) {
+                                  _validateField(_usernameController, 'username');
+                                }
+                              },
+                              onEditingComplete: () {
+                                _validateField(_usernameController, 'username');
+                                _mobileFocus.requestFocus();  // Explicitly request focus on the mobile field
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Username is required';
+                                }
+                                if (!_usernameRegex.hasMatch(value)) {
+                                  if (value.length < 4 || value.length > 20) {
+                                    return 'Must be 4-20 characters long';
+                                  }
+                                  if (!RegExp(r'^[a-zA-Z]').hasMatch(value)) {
+                                    return 'Must start with a letter';
+                                  }
+                                  return 'Only letters, numbers, and underscores allowed';
+                                }
+                                return null;
+                              },
                               onSaved: (v) { /* Value is already in controller */ },
+                              onFieldSubmitted: (_) {
+                                _validateField(_usernameController, 'username');
+                                _mobileFocus.requestFocus();  // Explicitly request focus on the mobile field
+                              },
                             ),
                             const SizedBox(height: 24),
                             TextFormField(
                               controller: _mobileController,
-                              onTap: () {
-                                if (_mobileController.text.isEmpty) {
-                                  _mobileController.text = '+91 ';
-                                  _mobileController.selection = TextSelection.collapsed(offset: _mobileController.text.length);
-                                }
-                              },
+                              focusNode: _mobileFocus,
+                              textInputAction: TextInputAction.next,  // Use next to move to the next field
                               style: const TextStyle(color: primaryTextColor),
                               decoration: InputDecoration(
-                                prefixIcon: const Icon(Icons.phone_iphone, color: secondaryTextColor),
+                                prefixIcon: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                                  margin: const EdgeInsets.only(right: 8.0),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.phone_iphone, color: secondaryTextColor, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '+91',
+                                        style: TextStyle(
+                                          color: _mobileFocus.hasFocus ? accentColor : secondaryTextColor, 
+                                          fontWeight: FontWeight.bold
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        height: 24,
+                                        width: 1,
+                                        color: _mobileFocus.hasFocus ? accentColor.withOpacity(0.5) : secondaryTextColor.withOpacity(0.5),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 filled: true,
                                 fillColor: inputFillColor,
                                 hintText: 'Mobile Number',
@@ -346,20 +574,52 @@ class _SignupPageState extends State<SignupPage> {
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: accentColor, width: 1.5),
                                 ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: _errorColor, width: 1.5),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: _errorColor, width: 1.5),
+                                ),
                                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                helperText: _mobileError ? _mobileErrorMsg : null,
+                                helperStyle: TextStyle(color: _mobileError ? _errorColor : helperTextColor, fontSize: 12),
+                                errorStyle: TextStyle(color: _errorColor),
                               ),
                               keyboardType: TextInputType.phone,
-                              validator: (v) {
-                                final txt = v ?? '';
-                                if (!txt.startsWith('+91 ') || txt.trim() == '+91') return 'Enter mobile number';
-                                final num = txt.replaceFirst('+91 ', '').trim();
-                                if (num.length != 10) return 'Enter a valid 10-digit number';
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
+                              onChanged: (value) {
+                                if (_mobileError) {
+                                  _validateField(_mobileController, 'mobile');
+                                }
+                              },
+                              onEditingComplete: () {
+                                _validateField(_mobileController, 'mobile');
+                                _passwordFocus.requestFocus();  // Explicitly request focus on the password field
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Mobile number is required';
+                                }
+                                if (!_mobileRegex.hasMatch(value)) {
+                                  return 'Must be exactly 10 digits';
+                                }
                                 return null;
+                              },
+                              onFieldSubmitted: (_) {
+                                _validateField(_mobileController, 'mobile');
+                                _passwordFocus.requestFocus();  // Explicitly request focus on the password field
                               },
                             ),
                             const SizedBox(height: 24),
                             TextFormField(
                               controller: _passwordController,
+                              focusNode: _passwordFocus,
+                              textInputAction: TextInputAction.done,  // Use done on the last field
                               style: const TextStyle(color: primaryTextColor),
                               obscureText: _obscurePassword,
                               decoration: InputDecoration(
@@ -380,9 +640,63 @@ class _SignupPageState extends State<SignupPage> {
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: accentColor, width: 1.5),
                                 ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: _errorColor, width: 1.5),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: _errorColor, width: 1.5),
+                                ),
                                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                helperText: _passwordError ? _passwordErrorMsg : null,
+                                helperStyle: TextStyle(color: _passwordError ? _errorColor : helperTextColor, fontSize: 12),
+                                errorStyle: TextStyle(color: _errorColor),
                               ),
-                              validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
+                              onChanged: (value) {
+                                // Don't show errors immediately during typing
+                                if (_passwordError) {
+                                  _validateField(_passwordController, 'password');
+                                }
+                              },
+                              onEditingComplete: () {
+                                _validateField(_passwordController, 'password');
+                                _passwordFocus.unfocus();  // Unfocus to hide keyboard
+                                // Optional: trigger signup
+                                // _registerUser();
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Password is required';
+                                }
+                                if (value.length < 8 || value.length > 20) {
+                                  return 'Must be 8-20 characters long';
+                                }
+                                if (!_passwordRegex.hasMatch(value)) {
+                                  if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                                    return 'Must include at least one uppercase letter';
+                                  }
+                                  if (!RegExp(r'[a-z]').hasMatch(value)) {
+                                    return 'Must include at least one lowercase letter';
+                                  }
+                                  if (!RegExp(r'[0-9]').hasMatch(value)) {
+                                    return 'Must include at least one number';
+                                  }
+                                  if (!RegExp(r'[@#$%^&+=!]').hasMatch(value)) {
+                                    return 'Must include at least one special character (@#\$%^&+=!)';
+                                  }
+                                  if (RegExp(r'\s').hasMatch(value)) {
+                                    return 'Spaces are not allowed';
+                                  }
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) {
+                                _validateField(_passwordController, 'password');
+                                _passwordFocus.unfocus();  // Unfocus to hide keyboard
+                                // Optional: trigger signup
+                                // _registerUser();
+                              },
                             ),
                             const SizedBox(height: 24),
                           ],
@@ -398,20 +712,12 @@ class _SignupPageState extends State<SignupPage> {
                                       valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE8FA7A)),
                                     ),
                                   )
-                                : _buildGradientButton(
-                                    onPressed: () {
+                                : _buildSliderButton(
+                                    onSlideComplete: () {
                                       HapticFeedback.mediumImpact();
                                       _registerUser();
                                     },
                                     gradient: mainGradient,
-                                    child: const Text(
-                                      'Sign Up',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                      ),
-                                    ),
                                   ),
                             const SizedBox(height: 40),
                             Center(
@@ -448,12 +754,14 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget _buildGradientButton({
-    required VoidCallback onPressed,
-    required Widget child,
+  // Removed unused _buildGradientButton method
+
+  Widget _buildSliderButton({
+    required VoidCallback onSlideComplete,
     required Gradient gradient,
   }) {
     return Container(
+      height: 56,
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(16),
@@ -466,19 +774,31 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ],
       ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.black,
-          minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      child: SliderButton(
+        action: () async {
+          onSlideComplete();
+          return true;
+        },
+        backgroundColor: Colors.transparent,
+        buttonColor: Colors.black,
+        highlightedColor: Colors.white,
+        baseColor: Colors.black,
+        buttonSize: 48,
+        height: 56,
+        vibrationFlag: true,
+        label: const Text(
+          "Slide to Sign Up",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
-          elevation: 0,
-          shadowColor: Colors.transparent,
         ),
-        child: child,
+        icon: const Icon(
+          Icons.arrow_forward,
+          color: Color(0xFFE8FA7A),
+          size: 24,
+        ),
       ),
     );
   }
