@@ -1,6 +1,9 @@
 const { Pool } = require('pg');
 const { dbConfig } = require('./environment');
 
+console.log('Connecting with:', dbConfig);
+
+
 const pool = new Pool({
   user: dbConfig.user,
   host: dbConfig.host,
