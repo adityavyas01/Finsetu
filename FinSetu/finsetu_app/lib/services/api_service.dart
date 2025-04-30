@@ -6,11 +6,11 @@ class ApiService {
   // Use different URLs for development and production
   static String get baseUrl {
     if (kDebugMode) {
-      // In debug mode, use ngrok URL
-      return 'https://e3a4-2409-40c4-32-576-dc2f-bb3d-aea4-367c.ngrok-free.app/api/auth';
+      // In debug mode, use ngrok URL without /api/auth (it will be added in the endpoint)
+      return 'https://e3a4-2409-40c4-32-576-dc2f-bb3d-aea4-367c.ngrok-free.app';
     } else {
       // In release mode, use production URL
-      return 'https://api.finsetu.com/api/auth';
+      return 'https://api.finsetu.com';
     }
   }
   
@@ -21,13 +21,14 @@ class ApiService {
     required String password,
   }) async {
     try {
+      final url = '$baseUrl/api/auth/register';
       print('=== API Registration Request ===');
-      print('URL: $baseUrl/register');
+      print('URL: $url');
       print('Username: $username');
       print('Phone: $phoneNumber');
       
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -43,19 +44,24 @@ class ApiService {
       print('Status Code: ${response.statusCode}');
       print('Response Body: ${response.body}');
 
-      final responseData = jsonDecode(response.body);
-      
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
         return {
           'success': true,
           'data': responseData,
           'message': responseData['message'] ?? 'Registration successful',
         };
       } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Registration failed';
+        } catch (e) {
+          errorMessage = 'Registration failed: Invalid response from server';
+        }
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Registration failed',
-          'data': responseData,
+          'message': errorMessage,
         };
       }
     } catch (e) {
@@ -75,14 +81,15 @@ class ApiService {
     required String otp,
   }) async {
     try {
+      final url = '$baseUrl/api/auth/verify-otp';
       print('=== OTP Verification Request ===');
-      print('URL: $baseUrl/verify-otp');
+      print('URL: $url');
       print('User ID: $userId');
       print('Phone: $phoneNumber');
       print('OTP: $otp');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/verify-otp'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -98,19 +105,24 @@ class ApiService {
       print('Status Code: ${response.statusCode}');
       print('Response Body: ${response.body}');
 
-      final responseData = jsonDecode(response.body);
-      
       if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
         return {
           'success': true,
           'data': responseData,
           'message': responseData['message'] ?? 'OTP verified successfully',
         };
       } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'OTP verification failed';
+        } catch (e) {
+          errorMessage = 'OTP verification failed: Invalid response from server';
+        }
         return {
           'success': false,
-          'message': responseData['message'] ?? 'OTP verification failed',
-          'data': responseData,
+          'message': errorMessage,
         };
       }
     } catch (e) {
