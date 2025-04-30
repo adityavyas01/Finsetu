@@ -349,7 +349,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: _isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.black,
@@ -360,35 +360,19 @@ class _LoginScreenState extends State<LoginScreen> {
           elevation: 0,
           shadowColor: Colors.transparent,
         ),
-        child: child,
+        child: _isLoading 
+          ? const SizedBox(
+              height: 24, 
+              width: 24, 
+              child: CircularProgressIndicator(
+                color: Colors.black,
+                strokeWidth: 3,
+              )
+            )
+          : child,
       ),
     );
   }
-
-  // Widget _buildGoogleButton({
-  //   required VoidCallback onPressed,
-  // }) {
-  //   return ElevatedButton.icon(
-  //     onPressed: onPressed,
-  //     icon: Image.asset(
-  //       'assets/images/google_logo.png',
-  //       height: 20.0,
-  //       width: 20.0,
-  //     ),
-  //     label: const Text('Sign in with Google'),
-  //     style: ElevatedButton.styleFrom(
-  //       backgroundColor: Colors.white,
-  //       foregroundColor: Colors.black87,
-  //       minimumSize: const Size(280, 46),
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(12),
-  //         side: BorderSide(color: Colors.white.withOpacity(0.1)),
-  //       ),
-  //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-  //       textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-  //     ),
-  //   );
-  // }
 
   void _navigateBackToSignup(BuildContext context) {
     // Function remains for the "Sign Up" text button at the bottom
@@ -414,11 +398,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
         print('Attempting to login user: $mobile'); // Debug log
 
-        // Make API call to login
-        final response = await ApiService.login(
-          phoneNumber: mobile,
-          password: password,
-        );
+        // Using mock API while real endpoint is not available
+        final response = await _mockLoginApi(mobile, password);
 
         print('Login response: $response'); // Debug log
 
@@ -429,6 +410,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (response['success']) {
           print('Login successful, navigating to home screen'); // Debug log
+          
+          // Show success message before navigation
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
+          );
+          
+          // Small delay for snackbar to be visible
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          if (!mounted) return;
+          
           // Navigate to home screen and remove all previous routes
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -439,7 +435,10 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           print('Login failed: ${response['message']}'); // Debug log
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Login failed')),
+            SnackBar(
+              content: Text(response['message'] ?? 'Login failed'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } catch (error) {
@@ -449,9 +448,62 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: ${error.toString()}')),
+          SnackBar(
+            content: Text('Login failed: ${error.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
+    }
+  }
+
+  // Mock API for login - will be replaced with real API later
+  Future<Map<String, dynamic>> _mockLoginApi(String mobile, String password) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // Mock credentials for testing
+    const validMobile = '1234567890';
+    const validPassword = 'password123';
+    
+    // Alternative test credentials
+    if (mobile == '9876543210' && password == 'test123') {
+      return {
+        'success': true,
+        'message': 'Login successful',
+        'data': {
+          'user': {
+            'id': '67890',
+            'name': 'Demo User',
+            'phone': mobile,
+          },
+          'token': 'mock_jwt_token_for_testing_demo_user',
+        }
+      };
+    }
+    
+    // Primary test credentials
+    else if (mobile == validMobile && password == validPassword) {
+      return {
+        'success': true,
+        'message': 'Login successful',
+        'data': {
+          'user': {
+            'id': '12345',
+            'name': 'Test User',
+            'phone': mobile,
+          },
+          'token': 'mock_jwt_token_for_testing',
+        }
+      };
+    } 
+    
+    // Invalid credentials
+    else {
+      return {
+        'success': false,
+        'message': 'Invalid phone number or password',
+      };
     }
   }
 }
