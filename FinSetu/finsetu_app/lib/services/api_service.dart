@@ -6,9 +6,8 @@ class ApiService {
   // Use different URLs for development and production
   static String get baseUrl {
     if (kDebugMode) {
-      // In debug mode, use ngrok URL if available, otherwise use localhost
-      return const String.fromEnvironment('API_URL', 
-        defaultValue: 'http://localhost:3000/api/auth');
+      // In debug mode, use ngrok URL
+      return 'https://e3a4-2409-40c4-32-576-dc2f-bb3d-aea4-367c.ngrok-free.app/api/auth';
     } else {
       // In release mode, use production URL
       return 'https://api.finsetu.com/api/auth';

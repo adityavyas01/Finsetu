@@ -162,7 +162,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              // Navigate directly to home screen
+              // Navigate to home screen and remove all previous routes
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(
                   builder: (context) => const HomeScreen(),

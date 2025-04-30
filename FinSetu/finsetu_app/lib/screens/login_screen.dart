@@ -5,6 +5,7 @@ import 'package:finsetu_app/screens/reset_password_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:finsetu_app/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -262,15 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 40), // More spacing before button
                         // Sign In Button
                         _buildGradientButton(
-                          onPressed: () {
-                            HapticFeedback.mediumImpact();
-                            // Skip form validation and directly navigate to home screen
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => const HomeScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: _login,
                           gradient: mainGradient,
                           child: const Text(
                             'Sign In',
@@ -404,5 +398,60 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (context) => const SignupPage(),
       ),
     );
+  }
+
+  Future<void> _login() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      _formKey.currentState?.save();
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final mobile = _mobileController.text.replaceFirst('+91 ', '').trim();
+        final password = _passwordController.text.trim();
+
+        print('Attempting to login user: $mobile'); // Debug log
+
+        // Make API call to login
+        final response = await ApiService.login(
+          phoneNumber: mobile,
+          password: password,
+        );
+
+        print('Login response: $response'); // Debug log
+
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (response['success']) {
+          print('Login successful, navigating to home screen'); // Debug log
+          // Navigate to home screen and remove all previous routes
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+            (route) => false, // Remove all previous routes
+          );
+        } else {
+          print('Login failed: ${response['message']}'); // Debug log
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['message'] ?? 'Login failed')),
+          );
+        }
+      } catch (error) {
+        print('Login error: $error'); // Debug log
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${error.toString()}')),
+        );
+      }
+    }
   }
 }

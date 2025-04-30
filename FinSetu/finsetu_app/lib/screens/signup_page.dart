@@ -170,12 +170,16 @@ class _SignupPageState extends State<SignupPage> {
         final mobile = _mobileController.text.trim();
         final password = _passwordController.text.trim();
 
+        print('Attempting to register user: $username, $mobile'); // Debug log
+
         // Make API call to register user
         final response = await ApiService.registerUser(
           username: username,
           phoneNumber: mobile,
           password: password,
         );
+
+        print('Registration response: $response'); // Debug log
 
         // Check mounted before updating state to prevent errors if widget is disposed
         if (!mounted) return;
@@ -185,8 +189,9 @@ class _SignupPageState extends State<SignupPage> {
         });
 
         if (response['success']) {
+          print('Registration successful, navigating to OTP screen'); // Debug log
           // Navigate to OTP verification screen
-          Navigator.of(context).push(
+          Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => OtpVerificationScreen(
                 username: username,
@@ -196,16 +201,15 @@ class _SignupPageState extends State<SignupPage> {
             ),
           );
         } else {
+          print('Registration failed: ${response['message']}'); // Debug log
           _showErrorDialog(response['message'] ?? 'Registration failed');
         }
       } catch (error) {
-        // Check mounted before updating state
+        print('Registration error: $error'); // Debug log
         if (!mounted) return;
-        
         setState(() {
           _isLoading = false;
         });
-        
         _showErrorDialog('Registration failed: ${error.toString()}');
       }
     }
