@@ -170,7 +170,10 @@ class _SignupPageState extends State<SignupPage> {
         final mobile = _mobileController.text.trim();
         final password = _passwordController.text.trim();
 
-        print('Attempting to register user: $username, $mobile'); // Debug log
+        print('=== Registration Attempt ===');
+        print('Username: $username');
+        print('Mobile: $mobile');
+        print('Password: ${password.replaceAll(RegExp(r'.'), '*')}'); // Mask password for logging
 
         // Make API call to register user
         final response = await ApiService.registerUser(
@@ -179,17 +182,27 @@ class _SignupPageState extends State<SignupPage> {
           password: password,
         );
 
-        print('Registration response: $response'); // Debug log
+        print('=== Registration Response ===');
+        print('Status Code: ${response['success']}');
+        print('Message: ${response['message']}');
+        print('Data: ${response['data']}');
 
         // Check mounted before updating state to prevent errors if widget is disposed
-        if (!mounted) return;
+        if (!mounted) {
+          print('Widget not mounted, returning');
+          return;
+        }
 
         setState(() {
           _isLoading = false;
         });
 
         if (response['success']) {
-          print('Registration successful, navigating to OTP screen'); // Debug log
+          print('=== Navigation to OTP Screen ===');
+          print('Username: $username');
+          print('Mobile: $mobile');
+          print('User ID: ${response['data']['id']}');
+          
           // Navigate to OTP verification screen
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -201,17 +214,31 @@ class _SignupPageState extends State<SignupPage> {
             ),
           );
         } else {
-          print('Registration failed: ${response['message']}'); // Debug log
+          print('=== Registration Failed ===');
+          print('Error: ${response['message']}');
           _showErrorDialog(response['message'] ?? 'Registration failed');
         }
       } catch (error) {
-        print('Registration error: $error'); // Debug log
-        if (!mounted) return;
+        print('=== Registration Error ===');
+        print('Error: $error');
+        print('Stack trace: ${StackTrace.current}');
+        
+        if (!mounted) {
+          print('Widget not mounted during error, returning');
+          return;
+        }
+        
         setState(() {
           _isLoading = false;
         });
+        
         _showErrorDialog('Registration failed: ${error.toString()}');
       }
+    } else {
+      print('=== Form Validation Failed ===');
+      print('Username error: $_usernameErrorMsg');
+      print('Mobile error: $_mobileErrorMsg');
+      print('Password error: $_passwordErrorMsg');
     }
   }
 

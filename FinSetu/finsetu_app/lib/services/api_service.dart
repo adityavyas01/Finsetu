@@ -21,6 +21,11 @@ class ApiService {
     required String password,
   }) async {
     try {
+      print('=== API Registration Request ===');
+      print('URL: $baseUrl/register');
+      print('Username: $username');
+      print('Phone: $phoneNumber');
+      
       final response = await http.post(
         Uri.parse('$baseUrl/register'),
         headers: {
@@ -34,20 +39,28 @@ class ApiService {
         }),
       ).timeout(const Duration(seconds: 10));
 
+      print('=== API Registration Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
       final responseData = jsonDecode(response.body);
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return {
           'success': true,
           'data': responseData,
+          'message': responseData['message'] ?? 'Registration successful',
         };
       } else {
         return {
           'success': false,
           'message': responseData['message'] ?? 'Registration failed',
+          'data': responseData,
         };
       }
     } catch (e) {
+      print('=== API Registration Error ===');
+      print('Error: $e');
       return {
         'success': false,
         'message': 'Network error: ${e.toString()}',
