@@ -30,8 +30,16 @@ class OtpService {
       console.log('User ID:', userId);
       console.log('OTP:', otp);
 
-      // Convert userId to integer if it's a string
-      const userIdInt = typeof userId === 'string' ? parseInt(userId) : userId;
+      // Validate userId and otp
+      if (!userId || !otp) {
+        throw new Error('Missing required fields: userId and otp');
+      }
+
+      // Convert userId to integer and validate
+      const userIdInt = parseInt(userId);
+      if (isNaN(userIdInt)) {
+        throw new Error('Invalid userId format');
+      }
       
       const validOtp = await prisma.otp.findFirst({
         where: {
