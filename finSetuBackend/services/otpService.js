@@ -26,10 +26,17 @@ class OtpService {
 
   static async verifyOtp(userId, otp) {
     try {
+      console.log('=== OTP Verification Request ===');
+      console.log('User ID:', userId);
+      console.log('OTP:', otp);
+
+      // Convert userId to integer if it's a string
+      const userIdInt = typeof userId === 'string' ? parseInt(userId) : userId;
+      
       const validOtp = await prisma.otp.findFirst({
         where: {
-          userId: parseInt(userId),
-          otp,
+          userId: userIdInt,
+          otp: otp,
           expiresAt: {
             gt: new Date()
           }
@@ -39,8 +46,11 @@ class OtpService {
         }
       });
       
+      console.log('=== OTP Verification Result ===');
+      console.log('Valid OTP:', validOtp);
+
       if (!validOtp) {
-        return false;
+        throw new Error('Invalid or expired OTP');
       }
       
       // Delete used OTP
@@ -49,9 +59,20 @@ class OtpService {
           id: validOtp.id
         }
       });
-      
+
+      // Update user verification status
+      await prisma.user.update({
+        where: {
+          id: userIdInt
+        },
+        data: {
+          isVerified: true
+        }
+      });
+
       return true;
     } catch (error) {
+      console.error('OTP verification error:', error);
       throw new Error(`OTP verification failed: ${error.message}`);
     }
   }
