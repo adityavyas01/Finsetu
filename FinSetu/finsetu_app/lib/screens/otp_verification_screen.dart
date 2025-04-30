@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // import 'package:finsetu_app/screens/login_screen.dart';
 import 'package:finsetu_app/screens/home_screen.dart';
+import 'package:finsetu_app/services/api_service.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String username;
@@ -88,7 +89,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     try {
       // Call API to verify OTP
-      final response = await _verifyOtpAPI(widget.userId, widget.mobile, otp);
+      final response = await ApiService.verifyOtp(
+        userId: widget.userId,
+        phoneNumber: widget.mobile,
+        otp: otp,
+      );
 
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -117,7 +122,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     try {
       // Call API to resend OTP
-      final response = await _resendOtpAPI(widget.userId, widget.mobile);
+      final response = await ApiService.resendOtp(
+        userId: widget.userId,
+        phoneNumber: widget.mobile,
+      );
 
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -141,155 +149,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         SnackBar(content: Text('Failed to resend OTP: ${error.toString()}')),
       );
     }
-  }
-
-  // Mock API for OTP verification - Replace with actual API when backend is ready
-  Future<Map<String, dynamic>> _verifyOtpAPI(String userId, String mobile, String otp) async {
-    // Mock endpoint URL for OTP verification
-    const String apiUrl = 'https://api.finsetu.com/api/v1/auth/verify-otp';
-    
-    // Simulate network delay for development testing
-    await Future.delayed(const Duration(seconds: 2));
-    
-    // For testing: consider any OTP with all same digits (e.g. 111111) as invalid
-    final allSame = otp.split('').every((digit) => digit == otp[0]);
-    
-    if (allSame) {
-      return {
-        'success': false,
-        'message': 'Invalid OTP. Please try again.',
-      };
-    }
-    
-    // For testing: Accept any other 6-digit OTP
-    return {
-      'success': true,
-      'data': {
-        'user_id': userId,
-        'message': 'OTP verified successfully',
-      },
-    };
-    
-    // Uncomment and modify when backend is ready
-    /*
-    try {
-      // Add HTTP package import at the top of the file
-      // import 'package:http/http.dart' as http;
-      // import 'dart:convert';
-      
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'user_id': userId,
-          'mobile': mobile.replaceAll('+91 ', '').trim(),
-          'otp': otp,
-        }),
-      ).timeout(const Duration(seconds: 10));
-      
-      final responseData = jsonDecode(response.body);
-      
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': responseData,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': responseData['error'] ?? responseData['message'] ?? 'Verification failed',
-        };
-      }
-    } catch (e) {
-      if (e is TimeoutException) {
-        return {
-          'success': false,
-          'message': 'Connection timed out. Please try again.',
-        };
-      } else if (e is SocketException) {
-        return {
-          'success': false,
-          'message': 'No internet connection. Please check your network.',
-        };
-      }
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-    */
-  }
-
-  // Mock API for resending OTP - Replace with actual API when backend is ready
-  Future<Map<String, dynamic>> _resendOtpAPI(String userId, String mobile) async {
-    // Mock endpoint URL for resending OTP
-    const String apiUrl = 'https://api.finsetu.com/api/v1/auth/resend-otp';
-    
-    // Simulate network delay for development testing
-    await Future.delayed(const Duration(seconds: 2));
-    
-    // For testing: Always return success
-    return {
-      'success': true,
-      'data': {
-        'user_id': userId,
-        'message': 'OTP resent successfully',
-      },
-    };
-    
-    // Uncomment and modify when backend is ready
-    /*
-    try {
-      // Add HTTP package import at the top of the file if not already added
-      // import 'package:http/http.dart' as http;
-      // import 'dart:convert';
-      
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'user_id': userId,
-          'mobile': mobile.replaceAll('+91 ', '').trim(),
-        }),
-      ).timeout(const Duration(seconds: 10));
-      
-      final responseData = jsonDecode(response.body);
-      
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': responseData,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': responseData['error'] ?? responseData['message'] ?? 'Failed to resend OTP',
-        };
-      }
-    } catch (e) {
-      if (e is TimeoutException) {
-        return {
-          'success': false,
-          'message': 'Connection timed out. Please try again.',
-        };
-      } else if (e is SocketException) {
-        return {
-          'success': false,
-          'message': 'No internet connection. Please check your network.',
-        };
-      }
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-    */
   }
 
   void _showSuccessDialog() {

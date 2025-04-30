@@ -4,12 +4,11 @@ const OtpService = require('../services/otpService');
 const SmsService = require('../services/smsService');
 const { bcryptSaltRounds } = require('../config/environment');
 
-// Register a new user
+// Register a new user and generate OTP
 exports.register = async (req, res) => {
   try {
     const { username, phoneNumber, password } = req.body;
     
-    // Check if all required fields are present
     if (!username || !phoneNumber || !password) {
       return res.status(400).json({
         success: false,
@@ -17,7 +16,6 @@ exports.register = async (req, res) => {
       });
     }
     
-    // Check if user already exists
     const existingUser = await User.findByPhone(phoneNumber);
     if (existingUser) {
       return res.status(400).json({
@@ -26,10 +24,8 @@ exports.register = async (req, res) => {
       });
     }
     
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, bcryptSaltRounds);
     
-    // Create new user
     const user = await User.create({
       username,
       phoneNumber,
@@ -45,7 +41,7 @@ exports.register = async (req, res) => {
       message: 'Registration initiated. Please verify your phone number.',
       data: {
         userId: user.id,
-        otp: otp // Always return OTP for development
+        otp: otp // Return OTP for development/testing
       }
     });
   } catch (error) {
@@ -58,12 +54,11 @@ exports.register = async (req, res) => {
   }
 };
 
-// Verify OTP for phone verification
+// Verify OTP
 exports.verifyOtp = async (req, res) => {
   try {
     const { userId, otp } = req.body;
     
-    // Verify OTP
     const isValid = await OtpService.verifyOtp(userId, otp);
     
     if (!isValid) {
@@ -73,7 +68,6 @@ exports.verifyOtp = async (req, res) => {
       });
     }
     
-    // Update user verification status
     await User.updateById(userId, { isPhoneVerified: true });
     
     return res.status(200).json({
@@ -85,6 +79,47 @@ exports.verifyOtp = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Server error during verification',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Resend OTP
+exports.resendOtp = async (req, res) => {
+  try {
+    const { userId, phoneNumber } = req.body;
+    
+    if (!userId || !phoneNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
+    }
+    
+    const otp = await OtpService.resendOtp(userId, phoneNumber);
+    await SmsService.sendOtp(phoneNumber, otp);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'OTP resent successfully',
+      data: {
+        userId,
+        otp: otp // Return OTP for development/testing
+      }
+    });
+  } catch (error) {
+    console.error('OTP resend error:', error);
+    
+    if (error.message.includes('User not found')) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Server error during OTP resend',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

@@ -1,0 +1,34 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:Holameadi@1@localhost:5432/finsetu?schema=public"
+}
+
+// Define your models here
+model User {
+  id              Int      @id @default(autoincrement())
+  username        String
+  phoneNumber     String   @unique
+  password        String
+  isPhoneVerified Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  otps            Otp[]
+}
+
+model Otp {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  phoneNumber String
+  otp         String
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  user        User     @relation(fields: [userId], references: [id])
+} 

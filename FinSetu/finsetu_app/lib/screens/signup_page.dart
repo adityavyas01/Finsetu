@@ -1,6 +1,7 @@
 import 'package:finsetu_app/screens/login_screen.dart';
 import 'package:finsetu_app/screens/get_started_screen.dart';
 import 'package:finsetu_app/screens/otp_verification_screen.dart';
+import 'package:finsetu_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
@@ -172,8 +173,12 @@ class _SignupPageState extends State<SignupPage> {
         final mobile = _mobileController.text.trim();
         final password = _passwordController.text.trim();
 
-        // Make API call to register user but ensure it's not blocking the UI
-        final response = await _registerUserAPI(username, mobile, password);
+        // Make API call to register user
+        final response = await ApiService.registerUser(
+          username: username,
+          phoneNumber: mobile,
+          password: password,
+        );
 
         // Check mounted before updating state to prevent errors if widget is disposed
         if (!mounted) return;
@@ -183,13 +188,13 @@ class _SignupPageState extends State<SignupPage> {
         });
 
         if (response['success']) {
-          // Navigate to OTP verification screen instead of showing success dialog
+          // Navigate to OTP verification screen
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => OtpVerificationScreen(
                 username: username,
                 mobile: mobile,
-                userId: response['data']['user_id'],
+                userId: response['data']['id'].toString(),
               ),
             ),
           );
@@ -199,94 +204,14 @@ class _SignupPageState extends State<SignupPage> {
       } catch (error) {
         // Check mounted before updating state
         if (!mounted) return;
-
+        
         setState(() {
           _isLoading = false;
         });
-
-        _showErrorDialog('An unexpected error occurred: ${error.toString()}');
+        
+        _showErrorDialog('Registration failed: ${error.toString()}');
       }
     }
-  }
-
-  Future<Map<String, dynamic>> _registerUserAPI(
-      String username,
-      String mobile,
-      String password) async {
-    // For development, use a mock response instead of hitting a real API endpoint
-    // Remove this and use the real API call when the backend is ready
-    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-    
-    // Mock success response for development testing
-    return {
-      'success': true,
-      'data': {
-        'user_id': '12345',
-        'username': username,
-        'message': 'Registration successful. Please verify OTP.'
-      },
-    };
-    
-    // Comment out the actual API implementation until backend is ready
-    /*
-    // Replace with your actual API endpoint when ready
-    const String apiUrl = 'https://api.finsetu.com/register';
-
-    try {
-      // Add timeout to prevent indefinite waiting
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'username': username,
-          'mobile': mobile.replaceAll('+91 ', '').trim(), // Remove country code prefix
-          'password': password,
-        }),
-      ).timeout(const Duration(seconds: 10), onTimeout: () {
-        throw TimeoutException('The connection has timed out. Please try again.');
-      });
-
-      // Parse the response
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return {
-          'success': true,
-          'data': responseData,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': responseData['error'] ?? 'Unknown error occurred',
-        };
-      }
-    } catch (e) {
-      // Handle network errors properly
-      if (e is TimeoutException) {
-        return {
-          'success': false,
-          'message': 'Connection timed out. Please try again.',
-        };
-      } else if (e is SocketException) {
-        return {
-          'success': false, 
-          'message': 'No internet connection. Please check your network.',
-        };
-      } else if (e is FormatException) {
-        return {
-          'success': false,
-          'message': 'Invalid response format from server.',
-        };
-      }
-
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-    */
   }
 
   void _showErrorDialog(String errorMsg) {
