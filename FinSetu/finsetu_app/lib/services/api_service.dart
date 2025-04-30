@@ -75,6 +75,12 @@ class ApiService {
     required String otp,
   }) async {
     try {
+      print('=== OTP Verification Request ===');
+      print('URL: $baseUrl/verify-otp');
+      print('User ID: $userId');
+      print('Phone: $phoneNumber');
+      print('OTP: $otp');
+
       final response = await http.post(
         Uri.parse('$baseUrl/verify-otp'),
         headers: {
@@ -82,11 +88,15 @@ class ApiService {
           'Accept': 'application/json',
         },
         body: jsonEncode({
-          'userId': userId,
+          'userId': int.parse(userId), // Convert string to int for the backend
           'phoneNumber': phoneNumber,
           'otp': otp,
         }),
       ).timeout(const Duration(seconds: 10));
+
+      print('=== OTP Verification Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
 
       final responseData = jsonDecode(response.body);
       
@@ -94,14 +104,18 @@ class ApiService {
         return {
           'success': true,
           'data': responseData,
+          'message': responseData['message'] ?? 'OTP verified successfully',
         };
       } else {
         return {
           'success': false,
           'message': responseData['message'] ?? 'OTP verification failed',
+          'data': responseData,
         };
       }
     } catch (e) {
+      print('=== OTP Verification Error ===');
+      print('Error: $e');
       return {
         'success': false,
         'message': 'Network error: ${e.toString()}',

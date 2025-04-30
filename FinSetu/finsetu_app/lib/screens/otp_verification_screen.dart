@@ -75,43 +75,65 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   Future<void> _verifyOtp() async {
-    // Collect OTP from all text fields
-    final otp = _otpControllers.map((controller) => controller.text).join('');
-    
-    if (otp.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter complete 6-digit OTP')),
-      );
-      return;
-    }
+    if (_formKey.currentState?.validate() ?? false) {
+      _formKey.currentState?.save();
 
-    setState(() => _isLoading = true);
+      setState(() {
+        _isLoading = true;
+      });
 
-    try {
-      // Call API to verify OTP
-      final response = await ApiService.verifyOtp(
-        userId: widget.userId,
-        phoneNumber: widget.mobile,
-        otp: otp,
-      );
+      try {
+        print('=== OTP Verification Attempt ===');
+        print('User ID: ${widget.userId}');
+        print('Phone: ${widget.mobile}');
+        print('OTP: ${_otpController.text}');
 
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      if (response['success']) {
-        _showSuccessDialog();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['message'] ?? 'Verification failed')),
+        final response = await ApiService.verifyOtp(
+          userId: widget.userId,
+          phoneNumber: widget.mobile,
+          otp: _otpController.text,
         );
+
+        print('=== OTP Verification Response ===');
+        print('Success: ${response['success']}');
+        print('Message: ${response['message']}');
+        print('Data: ${response['data']}');
+
+        if (!mounted) return;
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (response['success']) {
+          print('=== OTP Verification Successful ===');
+          print('Navigating to home screen');
+          
+          // Navigate to home screen and remove all previous routes
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+            (route) => false, // Remove all previous routes
+          );
+        } else {
+          print('=== OTP Verification Failed ===');
+          print('Error: ${response['message']}');
+          _showErrorDialog(response['message'] ?? 'OTP verification failed');
+        }
+      } catch (error) {
+        print('=== OTP Verification Error ===');
+        print('Error: $error');
+        print('Stack trace: ${StackTrace.current}');
+        
+        if (!mounted) return;
+        
+        setState(() {
+          _isLoading = false;
+        });
+        
+        _showErrorDialog('OTP verification failed: ${error.toString()}');
       }
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Verification failed: ${error.toString()}')),
-      );
     }
   }
 
