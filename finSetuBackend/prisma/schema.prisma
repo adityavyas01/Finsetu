@@ -8,7 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:Holameadi@1@localhost:5432/finsetu?schema=public"
+  url      = env("DATABASE_URL")
 }
 
 // Define your models here

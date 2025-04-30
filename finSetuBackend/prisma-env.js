@@ -3,9 +3,9 @@ const fs = require('fs');
 
 // Try to load .env from different possible locations
 const envPaths = [
-  path.resolve(__dirname, '../.env'),
-  path.resolve(__dirname, '../../.env'),
-  path.resolve(__dirname, '.env')
+  path.resolve(__dirname, '../../.env'),  // Main directory
+  path.resolve(__dirname, '../.env'),     // FinSetu directory
+  path.resolve(__dirname, '.env')         // finSetuBackend directory
 ];
 
 let envLoaded = false;
@@ -19,8 +19,7 @@ for (const envPath of envPaths) {
 }
 
 if (!envLoaded) {
-  console.error('No .env file found in any of these locations:', envPaths);
-  process.exit(1);
+  console.log('No .env file found, using default configuration');
 }
 
 // Get database configuration from environment variables or defaults
@@ -28,7 +27,7 @@ const dbConfig = {
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'finsetu',
-  password: process.env.DB_PASSWORD || 'postgres',
+  password: process.env.DB_PASSWORD || 'Holameadi@1',
   port: parseInt(process.env.DB_PORT) || 5432,
 };
 
@@ -38,4 +37,13 @@ const DATABASE_URL = `postgresql://${dbConfig.user}:${dbConfig.password}@${dbCon
 // Set the DATABASE_URL in process.env
 process.env.DATABASE_URL = DATABASE_URL;
 
-console.log('Using DATABASE_URL:', DATABASE_URL); 
+// Also set it in the global environment
+global.DATABASE_URL = DATABASE_URL;
+
+console.log('Using DATABASE_URL:', DATABASE_URL);
+
+// Export the configuration
+module.exports = {
+  DATABASE_URL,
+  dbConfig
+}; 
