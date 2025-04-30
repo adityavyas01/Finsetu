@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "node start-dev.js",
     "test": "jest",
     "init-db": "node ./utils/dbInit.js",
     "start:prod": "cross-env NODE_ENV=production node server.js",

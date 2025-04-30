@@ -1,8 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  // Use different URLs for development and production
+  static String get baseUrl {
+    if (kDebugMode) {
+      // In debug mode, use ngrok URL if available, otherwise use localhost
+      return const String.fromEnvironment('API_URL', 
+        defaultValue: 'http://localhost:3000/api/auth');
+    } else {
+      // In release mode, use production URL
+      return 'https://api.finsetu.com/api/auth';
+    }
+  }
   
   // Register a new user
   static Future<Map<String, dynamic>> registerUser({
@@ -12,7 +23,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
+        Uri.parse('$baseUrl/register'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -53,7 +64,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/verify-otp'),
+        Uri.parse('$baseUrl/verify-otp'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -93,7 +104,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/resend-otp'),
+        Uri.parse('$baseUrl/resend-otp'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
