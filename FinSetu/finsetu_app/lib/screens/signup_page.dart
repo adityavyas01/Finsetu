@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:async';
-import 'package:slider_button/slider_button.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -48,8 +47,6 @@ class _SignupPageState extends State<SignupPage> {
   final FocusNode _usernameFocus = FocusNode();
   final FocusNode _mobileFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
-
-  // Removing unused field since prefix is already shown in the UI
 
   @override
   void initState() {
@@ -637,8 +634,8 @@ class _SignupPageState extends State<SignupPage> {
                                       valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE8FA7A)),
                                     ),
                                   )
-                                : _buildSliderButton(
-                                    onSlideComplete: () {
+                                : _buildSignUpButton(
+                                    onPressed: () {
                                       HapticFeedback.mediumImpact();
                                       _registerUser();
                                     },
@@ -679,13 +676,12 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  // Removed unused _buildGradientButton method
-
-  Widget _buildSliderButton({
-    required VoidCallback onSlideComplete,
+  Widget _buildSignUpButton({
+    required VoidCallback onPressed,
     required Gradient gradient,
   }) {
     return Container(
+      width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
         gradient: gradient,
@@ -699,30 +695,24 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ],
       ),
-      child: SliderButton(
-        action: () async {
-          onSlideComplete();
-          return true;
-        },
-        backgroundColor: Colors.transparent,
-        buttonColor: Colors.black,
-        highlightedColor: Colors.white,
-        baseColor: Colors.black,
-        buttonSize: 48,
-        height: 56,
-        vibrationFlag: true,
-        label: const Text(
-          "Slide to Sign Up",
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: const Text(
+          "Sign Up",
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
-        ),
-        icon: const Icon(
-          Icons.arrow_forward,
-          color: Color(0xFFE8FA7A),
-          size: 24,
         ),
       ),
     );
