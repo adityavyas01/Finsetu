@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:finsetu_app/screens/split_bill_screen.dart';
 import 'package:finsetu_app/screens/bill_groups_screen.dart';
+import 'package:finsetu_app/screens/login_screen.dart'; // Add this import for logout navigation
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,11 +13,28 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // Show the user profile drawer
+  void _showUserProfileDrawer() {
+    _scaffoldKey.currentState?.openEndDrawer();
+  }
+
+  // Handle logout action
+  void _handleLogout() {
+    // Navigate to login screen and remove all previous routes
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(),
+      ),
+      (route) => false,
+    );
   }
 
   @override
@@ -34,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const Color inputFillColor = Color(0xFF1E1E1E);
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: darkSurfaceColor,
       body: SafeArea(
         child: _buildBody(
@@ -46,7 +65,189 @@ class _HomeScreenState extends State<HomeScreen> {
           _scrollController,
         ),
       ),
+      endDrawer: _buildUserProfileDrawer(
+        mainGradient, 
+        accentColor, 
+        primaryTextColor, 
+        secondaryTextColor,
+        inputFillColor,
+      ),
       bottomNavigationBar: _buildBottomNavigationBar(mainGradient),
+    );
+  }
+
+  // Build the user profile drawer
+  Widget _buildUserProfileDrawer(
+    LinearGradient mainGradient,
+    Color accentColor,
+    Color primaryTextColor,
+    Color secondaryTextColor,
+    Color inputFillColor,
+  ) {
+    return Drawer(
+      width: MediaQuery.of(context).size.width * 0.75, // 75% of screen width
+      backgroundColor: Colors.black,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.close, color: primaryTextColor),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            // User Profile Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              child: Column(
+                children: [
+                  // User Avatar
+                  Container(
+                    height: 80,
+                    width: 80,
+                    decoration: BoxDecoration(
+                      color: inputFillColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: accentColor.withOpacity(0.4),
+                        width: 2.0,
+                      ),
+                    ),
+                    child: Center(
+                      child: ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) => mainGradient.createShader(
+                          Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                        ),
+                        child: const Icon(
+                          Icons.person,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // User Name
+                  Text(
+                    "John Doe",
+                    style: TextStyle(
+                      color: primaryTextColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // User Email
+                  Text(
+                    "john.doe@example.com",
+                    style: TextStyle(
+                      color: secondaryTextColor,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // User Mobile
+                  Text(
+                    "+91 98765 43210",
+                    style: TextStyle(
+                      color: secondaryTextColor,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.white24),
+            // Profile Options
+            _buildProfileMenuItem(
+              icon: Icons.account_circle_outlined,
+              title: "My Profile",
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Profile option selected")),
+                );
+              },
+              textColor: primaryTextColor,
+            ),
+            _buildProfileMenuItem(
+              icon: Icons.settings_outlined,
+              title: "Account Settings",
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Settings option selected")),
+                );
+              },
+              textColor: primaryTextColor,
+            ),
+            _buildProfileMenuItem(
+              icon: Icons.help_outline,
+              title: "Help & Support",
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Help option selected")),
+                );
+              },
+              textColor: primaryTextColor,
+            ),
+            const Spacer(),
+            // Logout Button
+            Container(
+              margin: const EdgeInsets.all(16.0),
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context); // Close drawer first
+                  _handleLogout();
+                },
+                icon: const Icon(Icons.logout, color: Colors.black),
+                label: const Text(
+                  "Log Out",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  backgroundColor: accentColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build profile menu items
+  Widget _buildProfileMenuItem({
+    required IconData icon,
+    required String title,
+    required Function() onTap,
+    required Color textColor,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: textColor),
+      title: Text(
+        title,
+        style: TextStyle(color: textColor, fontSize: 16),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+      onTap: onTap,
     );
   }
 
@@ -124,13 +325,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icon(Icons.notifications_outlined, color: primaryTextColor),
                     onPressed: () {},
                   ),
+                  // Updated the user icon to open the profile drawer
                   IconButton(
                     icon: CircleAvatar(
                       radius: 16,
                       backgroundColor: inputFillColor,
                       child: Icon(Icons.person_outline, size: 18, color: primaryTextColor),
                     ),
-                    onPressed: () {},
+                    onPressed: _showUserProfileDrawer,
                   ),
                 ],
               ),

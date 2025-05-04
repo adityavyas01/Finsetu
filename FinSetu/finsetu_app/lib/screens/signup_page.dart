@@ -402,7 +402,7 @@ class _SignupPageState extends State<SignupPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 70),
+                            const SizedBox(height: 120), // Increased from 70 to 90
                             const Center(
                               child: Text(
                                 "Register",
