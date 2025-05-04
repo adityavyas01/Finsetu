@@ -488,33 +488,10 @@ class _SignupPageState extends State<SignupPage> {
                             TextFormField(
                               controller: _mobileController,
                               focusNode: _mobileFocus,
-                              textInputAction: TextInputAction.next,  // Use next to move to the next field
+                              textInputAction: TextInputAction.next,
                               style: const TextStyle(color: primaryTextColor),
                               decoration: InputDecoration(
-                                prefixIcon: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                                  margin: const EdgeInsets.only(right: 8.0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.phone_iphone, color: secondaryTextColor, size: 20),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '+91',
-                                        style: TextStyle(
-                                          color: _mobileFocus.hasFocus ? accentColor : secondaryTextColor, 
-                                          fontWeight: FontWeight.bold
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        height: 24,
-                                        width: 1,
-                                        color: _mobileFocus.hasFocus ? accentColor.withOpacity(0.5) : secondaryTextColor.withOpacity(0.5),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                prefixIcon: const Icon(Icons.phone_iphone, color: secondaryTextColor, size: 20),
                                 filled: true,
                                 fillColor: inputFillColor,
                                 hintText: 'Mobile Number',

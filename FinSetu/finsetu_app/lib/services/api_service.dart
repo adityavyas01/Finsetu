@@ -7,7 +7,7 @@ class ApiService {
   static String get baseUrl {
     if (kDebugMode) {
       // In debug mode, use ngrok URL without /api/auth (it will be added in the endpoint)
-      return 'https://182f-2409-40c4-32-576-b86a-7b96-a801-81f7.ngrok-free.app';
+      return 'https://05ac-2409-40c4-ee-f184-89f3-927a-556a-f4d0.ngrok-free.app';
     } else {
       // In release mode, use production URL
       return 'https://api.finsetu.com';
