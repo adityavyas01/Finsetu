@@ -406,18 +406,33 @@ class _LoginScreenState extends State<LoginScreen> {
         final phoneNumber = _mobileController.text.trim();
         final password = _passwordController.text;
 
+        print('=== Login Attempt ===');
+        print('Phone: $phoneNumber');
+        print('Password: ${password.replaceAll(RegExp(r'.'), '*')}'); // Mask password for logging
+
         // Call the login API
         final response = await ApiService.loginUser(
           phoneNumber: phoneNumber,
           password: password,
         );
 
-        if (!mounted) return;
+        print('=== Login Response ===');
+        print('Success: ${response['success']}');
+        print('Message: ${response['message']}');
+
+        if (!mounted) {
+          print('Widget not mounted, returning');
+          return;
+        }
+        
         setState(() {
           _isLoading = false;
         });
 
         if (response['success']) {
+          print('=== Login Successful ===');
+          print('User Data: ${response['data']}');
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(response['message'] ?? 'Login successful!'),
@@ -430,6 +445,7 @@ class _LoginScreenState extends State<LoginScreen> {
           
           if (!mounted) return;
           
+          // Navigate to home screen, removing all previous routes
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (context) => const HomeScreen(),
@@ -437,6 +453,10 @@ class _LoginScreenState extends State<LoginScreen> {
             (route) => false,
           );
         } else {
+          print('=== Login Failed ===');
+          print('Error: ${response['message']}');
+          
+          // Show error message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(response['message'] ?? 'Login failed'),
@@ -445,13 +465,22 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } catch (error) {
-        if (!mounted) return;
+        print('=== Login Error ===');
+        print('Error: $error');
+        print('Stack trace: ${StackTrace.current}');
+        
+        if (!mounted) {
+          print('Widget not mounted during error, returning');
+          return;
+        }
+        
         setState(() {
           _isLoading = false;
         });
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${error.toString()}'),
+            content: Text('Login failed: ${error.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
