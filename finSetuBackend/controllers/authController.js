@@ -266,3 +266,92 @@ exports.resendOtp = async (req, res) => {
     });
   }
 };
+
+// Login user
+exports.login = async (req, res) => {
+  try {
+    const { phoneNumber, password } = req.body;
+    
+    console.log('\n=== Login Request ===');
+    console.log('Phone Number:', phoneNumber);
+    
+    // Validate required fields
+    if (!phoneNumber || !password) {
+      console.log('Validation Error: Missing required fields');
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
+    }
+    
+    // Find user by phone number
+    console.log('Searching for user with phone number:', phoneNumber);
+    const user = await prisma.user.findFirst({
+      where: {
+        phoneNumber
+      }
+    });
+    
+    if (!user) {
+      console.log('User not found');
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    console.log('User found:', {
+      id: user.id,
+      username: user.username,
+      isPhoneVerified: user.isPhoneVerified
+    });
+    
+    // Check if phone is verified
+    if (!user.isPhoneVerified) {
+      console.log('Phone not verified');
+      return res.status(403).json({
+        success: false,
+        message: 'Phone number not verified. Please verify your phone number first.'
+      });
+    }
+    
+    // Verify password
+    console.log('Verifying password...');
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+      console.log('Invalid password');
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid password'
+      });
+    }
+    
+    console.log('Password verified successfully');
+    console.log('Login successful for user:', {
+      id: user.id,
+      username: user.username,
+      phoneNumber: user.phoneNumber
+    });
+    
+    // Password is valid, return success
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        userId: user.id.toString(),
+        username: user.username,
+        phoneNumber: user.phoneNumber,
+        isPhoneVerified: user.isPhoneVerified
+      }
+    });
+  } catch (error) {
+    console.error('\n=== Login Error ===');
+    console.error('Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error during login',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

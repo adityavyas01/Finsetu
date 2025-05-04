@@ -173,4 +173,61 @@ class ApiService {
       };
     }
   }
+
+  // Login user
+  static Future<Map<String, dynamic>> loginUser({
+    required String phoneNumber,
+    required String password,
+  }) async {
+    try {
+      final url = '$baseUrl/api/auth/login';
+      print('=== API Login Request ===');
+      print('URL: $url');
+      print('Phone: $phoneNumber');
+      
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'phoneNumber': phoneNumber,
+          'password': password,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== API Login Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'data': responseData,
+          'message': responseData['message'] ?? 'Login successful',
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Login failed';
+        } catch (e) {
+          errorMessage = 'Login failed: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print('=== API Login Error ===');
+      print('Error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
 } 
