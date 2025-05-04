@@ -5,6 +5,7 @@ import 'package:finsetu_app/screens/reset_password_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:finsetu_app/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -401,31 +402,48 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
-        await Future.delayed(const Duration(milliseconds: 800));
-        
+        // Get the phone number and password
+        final phoneNumber = _mobileController.text.trim();
+        final password = _passwordController.text;
+
+        // Call the login API
+        final response = await ApiService.loginUser(
+          phoneNumber: phoneNumber,
+          password: password,
+        );
+
         if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login successful!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 1),
-          ),
-        );
-        
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        if (!mounted) return;
-        
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => const HomeScreen(),
-          ),
-          (route) => false,
-        );
+
+        if (response['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Login successful!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+          
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          if (!mounted) return;
+          
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+            (route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Login failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } catch (error) {
         if (!mounted) return;
         setState(() {
