@@ -22,7 +22,6 @@ class OtpVerificationScreen extends StatefulWidget {
 }
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
-  final _formKey = GlobalKey<FormState>();
   final List<TextEditingController> _otpControllers = List.generate(
     6,
     (index) => TextEditingController(),

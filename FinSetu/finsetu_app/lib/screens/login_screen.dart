@@ -5,7 +5,6 @@ import 'package:finsetu_app/screens/reset_password_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:finsetu_app/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +17,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   
+  final FocusNode _mobileFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
+  
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -25,6 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _mobileController.dispose();
     _passwordController.dispose();
+    _mobileFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -44,286 +48,300 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        // Navigate to get started page
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => const GetStartedScreen(),
           ),
         );
-        return false; // Prevents default back button behavior
+        return false;
       },
       child: Scaffold(
         backgroundColor: darkSurfaceColor,
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - 
-                    MediaQuery.of(context).padding.top - 
-                    kToolbarHeight,
-              ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Top section - Logo and header
-                    Column(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(height: 20),
-                        // Logo
-                        Hero(
-                          tag: 'app_logo',
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Row(
-                              children: [
-                                Container(
-                                  height: 60,
-                                  width: 60,
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black,
-                                    borderRadius: const BorderRadius.all(Radius.circular(16)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFE8FA7A).withOpacity(0.15),
-                                        blurRadius: 25,
-                                        spreadRadius: 2,
-                                        offset: const Offset(0, 5),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 20),
+                            Hero(
+                              tag: 'app_logo',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      height: 60,
+                                      width: 60,
+                                      alignment: Alignment.center,
+                                      padding: EdgeInsets.zero,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black,
+                                        borderRadius: const BorderRadius.all(Radius.circular(16)),
+                                        border: Border.all(
+                                          color: const Color(0xFFE8FA7A).withOpacity(0.4),
+                                          width: 1.5,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFE8FA7A).withOpacity(0.2),
+                                            blurRadius: 25,
+                                            spreadRadius: 3,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                          const BoxShadow(
+                                            color: Color(0x33000000),
+                                            blurRadius: 12,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  child: ShaderMask(
-                                    blendMode: BlendMode.srcIn,
-                                    shaderCallback: (bounds) => mainGradient.createShader(
-                                      Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                                    ),
-                                    child: const Text(
-                                      "F",
-                                      style: TextStyle(
-                                        fontSize: 36,
-                                        fontWeight: FontWeight.bold,
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          Container(
+                                            height: 40,
+                                            width: 40,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              gradient: RadialGradient(
+                                                colors: [
+                                                  const Color(0xFFE8FA7A).withOpacity(0.4),
+                                                  const Color(0xFFE8FA7A).withOpacity(0.0),
+                                                ],
+                                                stops: const [0.1, 1.0],
+                                              ),
+                                            ),
+                                          ),
+                                          ShaderMask(
+                                            blendMode: BlendMode.srcIn,
+                                            shaderCallback: (bounds) => const LinearGradient(
+                                              colors: [Color(0xFFE8FA7A), Color(0xFFA3E635), Color(0xFF86C332)],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              stops: [0.0, 0.7, 1.0],
+                                            ).createShader(
+                                              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                                            ),
+                                            child: const Center(
+                                              child: Text(
+                                                "F",
+                                                style: TextStyle(
+                                                  fontSize: 36,
+                                                  fontWeight: FontWeight.w900,
+                                                  height: 1,
+                                                  shadows: [
+                                                    Shadow(
+                                                      color: Color(0x60000000),
+                                                      blurRadius: 4,
+                                                      offset: Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
-                                  ),
+                                    const SizedBox(width: 12),
+                                    ShaderMask(
+                                      blendMode: BlendMode.srcIn,
+                                      shaderCallback: (bounds) => mainGradient.createShader(
+                                        Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                                      ),
+                                      child: const Text(
+                                        "FinSetu",
+                                        style: TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 12),
-                                ShaderMask(
+                              ),
+                            ),
+                            const SizedBox(height: 70),
+                            const Center(
+                              child: Text(
+                                "Login",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _mobileController,
+                              focusNode: _mobileFocus,
+                              textInputAction: TextInputAction.next,
+                              onTap: () {
+                                // Remove the automatic +91 prefix addition when field is tapped
+                              },
+                              style: const TextStyle(color: primaryTextColor),
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.phone_iphone, color: secondaryTextColor, size: 20),
+                                filled: true,
+                                fillColor: inputFillColor,
+                                hintText: 'Mobile Number',
+                                hintStyle: const TextStyle(color: secondaryTextColor),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: accentColor, width: 1.5),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              keyboardType: TextInputType.phone,
+                              validator: (v) {
+                                final txt = v ?? '';
+                                if (txt.trim().isEmpty) return 'Enter mobile number';
+                                if (txt.trim().length != 10) return 'Enter a valid 10-digit number';
+                                return null;
+                              },
+                              onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+                              onSaved: (v) {/* Field validation handled in validator */},
+                            ),
+                            const SizedBox(height: 24),
+                            TextFormField(
+                              controller: _passwordController,
+                              focusNode: _passwordFocus,
+                              style: const TextStyle(color: primaryTextColor),
+                              obscureText: _obscurePassword,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.lock_outline, color: secondaryTextColor),
+                                suffixIcon: IconButton(
+                                  icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: secondaryTextColor),
+                                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                ),
+                                filled: true,
+                                fillColor: inputFillColor,
+                                hintText: 'Password',
+                                hintStyle: const TextStyle(color: secondaryTextColor),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: accentColor, width: 1.5),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
+                              onFieldSubmitted: (_) => _login(),
+                              onSaved: (v) { /* no-op since password is not stored */ },
+                            ),
+                            const SizedBox(height: 16),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const ResetPasswordScreen(),
+                                    ),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: ShaderMask(
                                   blendMode: BlendMode.srcIn,
                                   shaderCallback: (bounds) => mainGradient.createShader(
                                     Rect.fromLTWH(0, 0, bounds.width, bounds.height),
                                   ),
                                   child: const Text(
-                                    "FinSetu",  // Reverted back to original text without space
+                                    "Forgot Password?",
                                     style: TextStyle(
-                                      fontSize: 32,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 70), // Increased spacing from 50 to 70
-                        // Heading Text
-                        const Text(
-                          "Login",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28, // Reduced from 32
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16), // Slightly increased
-                        // Subtitle
-                        const Text(
-                          "Please sign in to continue.",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    // Middle section - Form fields
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Mobile number field
-                        TextFormField(
-                          controller: _mobileController,
-                          onTap: () {
-                            if (_mobileController.text.isEmpty) {
-                              _mobileController.text = '+91 ';
-                              _mobileController.selection = TextSelection.collapsed(offset: _mobileController.text.length);
-                            }
-                          },
-                          style: const TextStyle(color: primaryTextColor),
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(Icons.phone_iphone, color: secondaryTextColor),
-                            filled: true,
-                            fillColor: inputFillColor,
-                            hintText: 'Mobile Number',
-                            hintStyle: const TextStyle(color: secondaryTextColor),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: accentColor, width: 1.5),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          keyboardType: TextInputType.phone,
-                          validator: (v) {
-                            final txt = v ?? '';
-                            if (!txt.startsWith('+91 ') || txt.trim() == '+91') return 'Enter mobile number';
-                            final num = txt.replaceFirst('+91 ', '').trim();
-                            if (num.length != 10) return 'Enter a valid 10-digit number';
-                            return null;
-                          },
-                          onSaved: (v) {/* Field validation handled in validator */},
-                        ),
-                        const SizedBox(height: 24), // Increased spacing
-                        // Password field
-                        TextFormField(
-                          controller: _passwordController,
-                          style: const TextStyle(color: primaryTextColor),
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(Icons.lock_outline, color: secondaryTextColor),
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: secondaryTextColor),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                            filled: true,
-                            fillColor: inputFillColor,
-                            hintText: 'Password',
-                            hintStyle: const TextStyle(color: secondaryTextColor),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: accentColor, width: 1.5),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
-                          onSaved: (v) { /* no-op since password is not stored */ },
-                        ),
-                        const SizedBox(height: 16),
-                        // Forgot password
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ResetPasswordScreen(),
-                                ),
-                              );
-                            },
-                            style: TextButton.styleFrom(
-                              minimumSize: Size.zero,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: ShaderMask(
-                              blendMode: BlendMode.srcIn,
-                              shaderCallback: (bounds) => mainGradient.createShader(
-                                Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                              ),
-                              child: const Text(
-                                "Forgot Password?",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    // Bottom section - Buttons and links
-                    Column(
-                      children: [
-                        const SizedBox(height: 40), // More spacing before button
-                        // Sign In Button
-                        _buildGradientButton(
-                          onPressed: _login,
-                          gradient: mainGradient,
-                          child: const Text(
-                            'Sign In',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32), // Increased spacing
-                        // OR divider
-                        const Row(
-                          children: [
-                            Expanded(child: Divider(color: secondaryTextColor)),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
-                              child: Text('OR', style: TextStyle(color: secondaryTextColor)),
-                            ),
-                            Expanded(child: Divider(color: secondaryTextColor)),
+                            const SizedBox(height: 24),
                           ],
                         ),
-                        const SizedBox(height: 32), // Increased spacing
-                        // Google Sign-in button
-                        // Center(
-                        //   child: _buildGoogleButton(
-                        //     onPressed: () {
-                        //       HapticFeedback.lightImpact();
-                        //     },
-                        //   ),
-                        // ),
-                        const SizedBox(height: 40), // More bottom padding
-                        // Don't have an account
-                        Center(
-                          child: RichText(
-                            text: TextSpan(
-                              style: const TextStyle(color: secondaryTextColor, fontSize: 14),
-                              children: [
-                                const TextSpan(text: "Don't have an account? "),
-                                TextSpan(
-                                  text: 'Sign Up',
-                                  style: const TextStyle(
-                                    color: accentColor,
-                                    fontWeight: FontWeight.bold,
+                        Column(
+                          children: [
+                            const SizedBox(height: 40),
+                            _isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE8FA7A)),
+                                    ),
+                                  )
+                                : _buildGradientButton(
+                                    onPressed: () {
+                                      HapticFeedback.mediumImpact();
+                                      _login();
+                                    },
+                                    gradient: mainGradient,
+                                    child: const Text(
+                                      'Sign In',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
                                   ),
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () => _navigateBackToSignup(context),
+                            const SizedBox(height: 40),
+                            Center(
+                              child: RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(color: secondaryTextColor, fontSize: 14),
+                                  children: [
+                                    const TextSpan(text: "Don't have an account? "),
+                                    TextSpan(
+                                      text: 'Sign Up',
+                                      style: const TextStyle(
+                                        color: accentColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      recognizer: TapGestureRecognizer()
+                                        ..onTap = () => _navigateBackToSignup(context),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 24),
+                          ],
                         ),
-                        const SizedBox(height: 24), // Padding at bottom
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -336,6 +354,8 @@ class _LoginScreenState extends State<LoginScreen> {
     required Gradient gradient,
   }) {
     return Container(
+      width: double.infinity,
+      height: 56,
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(16),
@@ -353,30 +373,18 @@ class _LoginScreenState extends State<LoginScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.black,
-          minimumSize: const Size(double.infinity, 56),
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          elevation: 0,
-          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 16),
         ),
-        child: _isLoading 
-          ? const SizedBox(
-              height: 24, 
-              width: 24, 
-              child: CircularProgressIndicator(
-                color: Colors.black,
-                strokeWidth: 3,
-              )
-            )
-          : child,
+        child: child,
       ),
     );
   }
 
   void _navigateBackToSignup(BuildContext context) {
-    // Function remains for the "Sign Up" text button at the bottom
-    // but now it just navigates to SignupPage without the "back" behavior
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const SignupPage(),
@@ -393,117 +401,43 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
-        final mobile = _mobileController.text.replaceFirst('+91 ', '').trim();
-        final password = _passwordController.text.trim();
-
-        print('Attempting to login user: $mobile'); // Debug log
-
-        // Using mock API while real endpoint is not available
-        final response = await _mockLoginApi(mobile, password);
-
-        print('Login response: $response'); // Debug log
-
+        await Future.delayed(const Duration(milliseconds: 800));
+        
         if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
-
-        if (response['success']) {
-          print('Login successful, navigating to home screen'); // Debug log
-          
-          // Show success message before navigation
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
-            ),
-          );
-          
-          // Small delay for snackbar to be visible
-          await Future.delayed(const Duration(milliseconds: 500));
-          
-          if (!mounted) return;
-          
-          // Navigate to home screen and remove all previous routes
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const HomeScreen(),
-            ),
-            (route) => false, // Remove all previous routes
-          );
-        } else {
-          print('Login failed: ${response['message']}'); // Debug log
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? 'Login failed'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+        
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (!mounted) return;
+        
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+          (route) => false,
+        );
       } catch (error) {
-        print('Login error: $error'); // Debug log
         if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login failed: ${error.toString()}'),
+            content: Text('Error: ${error.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    }
-  }
-
-  // Mock API for login - will be replaced with real API later
-  Future<Map<String, dynamic>> _mockLoginApi(String mobile, String password) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 2));
-    
-    // Mock credentials for testing
-    const validMobile = '1234567890';
-    const validPassword = 'password123';
-    
-    // Alternative test credentials
-    if (mobile == '9876543210' && password == 'test123') {
-      return {
-        'success': true,
-        'message': 'Login successful',
-        'data': {
-          'user': {
-            'id': '67890',
-            'name': 'Demo User',
-            'phone': mobile,
-          },
-          'token': 'mock_jwt_token_for_testing_demo_user',
-        }
-      };
-    }
-    
-    // Primary test credentials
-    else if (mobile == validMobile && password == validPassword) {
-      return {
-        'success': true,
-        'message': 'Login successful',
-        'data': {
-          'user': {
-            'id': '12345',
-            'name': 'Test User',
-            'phone': mobile,
-          },
-          'token': 'mock_jwt_token_for_testing',
-        }
-      };
-    } 
-    
-    // Invalid credentials
-    else {
-      return {
-        'success': false,
-        'message': 'Invalid phone number or password',
-      };
     }
   }
 }
