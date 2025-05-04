@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:finsetu_app/screens/split_bill_screen.dart';
+// import 'package:finsetu_app/screens/split_bill_screen.dart';
+import 'package:finsetu_app/screens/bill_groups_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -309,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (actions[index]['label'] == 'Split Bills') {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SplitBillScreen()),
+                MaterialPageRoute(builder: (context) => const BillGroupsScreen()),
               );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(

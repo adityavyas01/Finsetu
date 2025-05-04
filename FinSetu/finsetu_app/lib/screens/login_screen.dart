@@ -5,7 +5,6 @@ import 'package:finsetu_app/screens/reset_password_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:finsetu_app/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -288,14 +287,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         const SizedBox(height: 32), // Increased spacing
-                        // Google Sign-in button
-                        // Center(
-                        //   child: _buildGoogleButton(
-                        //     onPressed: () {
-                        //       HapticFeedback.lightImpact();
-                        //     },
-                        //   ),
-                        // ),
                         const SizedBox(height: 40), // More bottom padding
                         // Don't have an account
                         Center(
@@ -393,117 +384,47 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
-        final mobile = _mobileController.text.replaceFirst('+91 ', '').trim();
-        final password = _passwordController.text.trim();
-
-        print('Attempting to login user: $mobile'); // Debug log
-
-        // Using mock API while real endpoint is not available
-        final response = await _mockLoginApi(mobile, password);
-
-        print('Login response: $response'); // Debug log
-
+        // Simulate a brief loading period
+        await Future.delayed(const Duration(milliseconds: 800));
+        
         if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
-
-        if (response['success']) {
-          print('Login successful, navigating to home screen'); // Debug log
-          
-          // Show success message before navigation
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
-            ),
-          );
-          
-          // Small delay for snackbar to be visible
-          await Future.delayed(const Duration(milliseconds: 500));
-          
-          if (!mounted) return;
-          
-          // Navigate to home screen and remove all previous routes
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const HomeScreen(),
-            ),
-            (route) => false, // Remove all previous routes
-          );
-        } else {
-          print('Login failed: ${response['message']}'); // Debug log
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? 'Login failed'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        
+        // Show success message before navigation
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+        
+        // Small delay for snackbar to be visible
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (!mounted) return;
+        
+        // Navigate to home screen and remove all previous routes
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+          (route) => false, // Remove all previous routes
+        );
       } catch (error) {
-        print('Login error: $error'); // Debug log
         if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login failed: ${error.toString()}'),
+            content: Text('Error: ${error.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    }
-  }
-
-  // Mock API for login - will be replaced with real API later
-  Future<Map<String, dynamic>> _mockLoginApi(String mobile, String password) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 2));
-    
-    // Mock credentials for testing
-    const validMobile = '1234567890';
-    const validPassword = 'password123';
-    
-    // Alternative test credentials
-    if (mobile == '9876543210' && password == 'test123') {
-      return {
-        'success': true,
-        'message': 'Login successful',
-        'data': {
-          'user': {
-            'id': '67890',
-            'name': 'Demo User',
-            'phone': mobile,
-          },
-          'token': 'mock_jwt_token_for_testing_demo_user',
-        }
-      };
-    }
-    
-    // Primary test credentials
-    else if (mobile == validMobile && password == validPassword) {
-      return {
-        'success': true,
-        'message': 'Login successful',
-        'data': {
-          'user': {
-            'id': '12345',
-            'name': 'Test User',
-            'phone': mobile,
-          },
-          'token': 'mock_jwt_token_for_testing',
-        }
-      };
-    } 
-    
-    // Invalid credentials
-    else {
-      return {
-        'success': false,
-        'message': 'Invalid phone number or password',
-      };
     }
   }
 }
