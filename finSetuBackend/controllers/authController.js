@@ -3,12 +3,16 @@ const User = require('../models/userModel');
 const OtpService = require('../services/otpService');
 const SmsService = require('../services/smsService');
 const { bcryptSaltRounds } = require('../config/environment');
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
 
 // Register a new user and generate OTP
 exports.register = async (req, res) => {
   try {
     const { username, phoneNumber, password } = req.body;
     
+    // Validate required fields
     if (!username || !phoneNumber || !password) {
       return res.status(400).json({
         success: false,
@@ -16,31 +20,56 @@ exports.register = async (req, res) => {
       });
     }
     
-    const existingUser = await User.findByPhone(phoneNumber);
-    if (existingUser) {
+    // Check if username already exists
+    const existingUsername = await prisma.user.findFirst({
+      where: {
+        username
+      }
+    });
+    
+    if (existingUsername) {
       return res.status(400).json({
         success: false,
-        message: 'User with this phone number already exists'
+        message: 'Username already exists'
       });
     }
     
+    // Check if phone number already exists
+    const existingPhone = await prisma.user.findFirst({
+      where: {
+        phoneNumber
+      }
+    });
+    
+    if (existingPhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number already registered'
+      });
+    }
+    
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, bcryptSaltRounds);
     
-    const user = await User.create({
-      username,
-      phoneNumber,
-      password: hashedPassword
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        username,
+        phoneNumber,
+        password: hashedPassword,
+        isPhoneVerified: false
+      }
     });
     
     // Generate and send OTP
-    const otp = await OtpService.generateOtp(user.id, phoneNumber);
-    await SmsService.sendOtp(phoneNumber, otp);
+    const otp = await OtpService.generateOtp(user.id);
     
     return res.status(201).json({
       success: true,
       message: 'Registration initiated. Please verify your phone number.',
       data: {
-        userId: user.id,
+        userId: user.id.toString(),
+        phoneNumber: phoneNumber,
         otp: otp // Return OTP for development/testing
       }
     });
@@ -57,37 +86,81 @@ exports.register = async (req, res) => {
 // Verify OTP
 exports.verifyOtp = async (req, res) => {
   try {
-    const { userId, otp } = req.body;
+    const { userId, phoneNumber, otp } = req.body;
     
     console.log('=== OTP Verification Request ===');
     console.log('Request Body:', req.body);
     
     // Validate required fields
-    if (!userId || !otp) {
+    if (!otp) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: userId and otp'
+        message: 'Missing required field: otp'
       });
     }
 
-    // Validate userId format
-    const userIdInt = parseInt(userId);
-    if (isNaN(userIdInt)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid userId format'
+    // If userId is null or undefined, try to find user by phoneNumber
+    let user;
+    if (!userId || userId === 'null') {
+      if (!phoneNumber) {
+        return res.status(400).json({
+          success: false,
+          message: 'Either userId or phoneNumber must be provided'
+        });
+      }
+      user = await prisma.user.findFirst({
+        where: {
+          phoneNumber
+        }
       });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found with the provided phone number'
+        });
+      }
+    } else {
+      // Convert userId to integer
+      const userIdInt = parseInt(userId);
+      if (isNaN(userIdInt)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid userId format'
+        });
+      }
+      user = await prisma.user.findUnique({
+        where: {
+          id: userIdInt
+        }
+      });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found with the provided userId'
+        });
+      }
     }
-    
-    const isValid = await OtpService.verifyOtp(userIdInt, otp);
+
+    // Verify OTP
+    const isValid = await OtpService.verifyOtp(user.id, otp);
     
     if (isValid) {
+      // Update user verification status
+      await prisma.user.update({
+        where: {
+          id: user.id
+        },
+        data: {
+          isPhoneVerified: true
+        }
+      });
+      
       return res.status(200).json({
         success: true,
         message: 'OTP verified successfully',
         data: {
-          userId: userIdInt,
-          isVerified: true
+          userId: user.id.toString(),
+          isPhoneVerified: true
         }
       });
     } else {
@@ -121,6 +194,13 @@ exports.verifyOtp = async (req, res) => {
       });
     }
     
+    if (error.message.includes('User not found')) {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
     return res.status(500).json({
       success: false,
       message: 'OTP verification failed',
@@ -134,37 +214,54 @@ exports.resendOtp = async (req, res) => {
   try {
     const { userId, phoneNumber } = req.body;
     
-    if (!userId || !phoneNumber) {
+    // Validate required fields
+    if (!userId && !phoneNumber) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields'
+        message: 'Either userId or phoneNumber must be provided'
       });
     }
     
-    const otp = await OtpService.resendOtp(userId, phoneNumber);
-    await SmsService.sendOtp(phoneNumber, otp);
+    // Find user by userId or phoneNumber
+    let user;
+    if (userId && userId !== 'null') {
+      user = await prisma.user.findUnique({
+        where: {
+          id: parseInt(userId)
+        }
+      });
+    } else if (phoneNumber) {
+      user = await prisma.user.findFirst({
+        where: {
+          phoneNumber
+        }
+      });
+    }
     
-    return res.status(200).json({
-      success: true,
-      message: 'OTP resent successfully',
-      data: {
-        userId,
-        otp: otp // Return OTP for development/testing
-      }
-    });
-  } catch (error) {
-    console.error('OTP resend error:', error);
-    
-    if (error.message.includes('User not found')) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
     
+    // Generate and send new OTP
+    const otp = await OtpService.resendOtp(user.id);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'OTP resent successfully',
+      data: {
+        userId: user.id.toString(),
+        phoneNumber: user.phoneNumber,
+        otp: otp // Return OTP for development/testing
+      }
+    });
+  } catch (error) {
+    console.error('OTP resend error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Server error during OTP resend',
+      message: 'Failed to resend OTP',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

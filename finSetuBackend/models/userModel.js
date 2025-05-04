@@ -30,6 +30,35 @@ class User {
     }
   }
 
+  static async findById(userId) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: parseInt(userId)
+        }
+      });
+      return user;
+    } catch (error) {
+      throw new Error(`User lookup failed: ${error.message}`);
+    }
+  }
+
+  static async updateVerificationStatus(userId, isVerified) {
+    try {
+      const user = await prisma.user.update({
+        where: {
+          id: parseInt(userId)
+        },
+        data: {
+          isPhoneVerified: isVerified
+        }
+      });
+      return user;
+    } catch (error) {
+      throw new Error(`User verification update failed: ${error.message}`);
+    }
+  }
+
   static async updateById(userId, updateData) {
     try {
       const user = await prisma.user.update({
