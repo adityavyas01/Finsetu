@@ -14,6 +14,7 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
   final TextEditingController _totalAmountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   late List<Person> _people;
+  late Person _selectedPayer; // Added class-level variable to track the selected payer
 
   bool _isEvenSplit = true;
   final List<BillItem> _billItems = [];
@@ -39,6 +40,18 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
       // Removed default text for description
     } else {
       _people = [Person(name: 'You', isYou: true), Person(name: 'Friend 1')];
+    }
+    
+    // Initialize the selected payer to be the user ("You") or the first person if no "You" exists
+    _selectedPayer = _people.firstWhere(
+      (p) => p.isYou, 
+      orElse: () => _people.isNotEmpty ? _people.first : Person(name: 'You', isYou: true)
+    );
+    
+    // Safety check: if _people is empty for some reason, add at least one person
+    if (_people.isEmpty) {
+      _people.add(Person(name: 'You', isYou: true));
+      _selectedPayer = _people.first;
     }
   }
 
@@ -267,9 +280,6 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
     final size = MediaQuery.of(context).size;
     final isWideScreen = size.width > 700;
     
-    // Initialize selected payer state variable
-    Person _selectedPayer = _people.firstWhere((p) => p.isYou, orElse: () => _people.first);
-    
     final DateTime now = DateTime.now();
     final String formattedDate = "${now.day}/${now.month}/${now.year}";
     final String formattedTime = "${now.hour}:${now.minute.toString().padLeft(2, '0')}";
@@ -418,53 +428,49 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
             color: inputFillColor,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: StatefulBuilder(
-            builder: (context, setDropdownState) {
-              return DropdownButtonHideUnderline(
-                child: DropdownButton<Person>(
-                  value: _selectedPayer,
-                  dropdownColor: const Color(0xFF2A2A2A),
-                  isExpanded: true,
-                  icon: Icon(Icons.keyboard_arrow_down, color: secondaryTextColor),
-                  items: _people.map((Person person) {
-                    return DropdownMenuItem<Person>(
-                      value: person,
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 14,
-                            backgroundColor: person.isYou ? accentColor : Colors.grey[800],
-                            child: Text(
-                              person.name.isNotEmpty ? person.name[0].toUpperCase() : "?",
-                              style: TextStyle(
-                                color: person.isYou ? Colors.black : primaryTextColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<Person>(
+              value: _selectedPayer,
+              dropdownColor: const Color(0xFF2A2A2A),
+              isExpanded: true,
+              icon: Icon(Icons.keyboard_arrow_down, color: secondaryTextColor),
+              items: _people.map((Person person) {
+                return DropdownMenuItem<Person>(
+                  value: person,
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: person.isYou ? accentColor : Colors.grey[800],
+                        child: Text(
+                          person.name.isNotEmpty ? person.name[0].toUpperCase() : "?",
+                          style: TextStyle(
+                            color: person.isYou ? Colors.black : primaryTextColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            person.isYou ? "You" : person.name,
-                            style: TextStyle(
-                              color: primaryTextColor,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (Person? newValue) {
-                    if (newValue != null) {
-                      setDropdownState(() {
-                        _selectedPayer = newValue;
-                      });
-                    }
-                  },
-                ),
-              );
-            }
+                      const SizedBox(width: 12),
+                      Text(
+                        person.isYou ? "You" : person.name,
+                        style: TextStyle(
+                          color: primaryTextColor,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (Person? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedPayer = newValue; // Update the class member variable
+                  });
+                }
+              },
+            ),
           ),
         ),
         const SizedBox(height: 24),
