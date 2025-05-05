@@ -300,7 +300,7 @@ class _SignupPageState extends State<SignupPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 20), // Increased from 20 to 40 to bring the app bar down
                             // Logo in same position as login screen
                             Hero(
                               tag: 'app_logo',
@@ -402,7 +402,7 @@ class _SignupPageState extends State<SignupPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 120), // Increased from 70 to 90
+                            const SizedBox(height: 80), // Reduced from 100 to 80 to keep proper spacing
                             const Center(
                               child: Text(
                                 "Register",

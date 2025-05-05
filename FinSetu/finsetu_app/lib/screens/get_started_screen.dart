@@ -13,24 +13,15 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Set preferred orientation
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
-    // Set system UI overlay style for better contrast
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light.copyWith(
       statusBarColor: Colors.transparent,
       systemNavigationBarColor: Colors.black,
-      systemNavigationBarIconBrightness: Brightness.light,
     ));
   }
 
   @override
   Widget build(BuildContext context) {
-    // Define the gradient for the logo text
     const logoGradient = LinearGradient(
       colors: [Color(0xFFE8FA7A), Color(0xFFAADF50)],
       begin: Alignment.topLeft,
@@ -45,8 +36,8 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(flex: 1),
-              // Logo with FinSetu Text with Hero animation
+              const Spacer(),
+              // Logo with gradient
               Hero(
                 tag: 'app_logo',
                 child: Material(
@@ -56,11 +47,9 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                       Container(
                         height: 80,
                         width: 80,
-                        alignment: Alignment.center,
-                        padding: EdgeInsets.zero,
                         decoration: BoxDecoration(
                           color: Colors.black,
-                          borderRadius: const BorderRadius.all(Radius.circular(18)),
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: const Color(0xFFE8FA7A).withOpacity(0.4),
                             width: 1.8,
@@ -70,75 +59,27 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                               color: const Color(0xFFE8FA7A).withOpacity(0.25),
                               blurRadius: 35,
                               spreadRadius: 5,
-                              offset: const Offset(0, 6),
-                            ),
-                            const BoxShadow(
-                              color: Color(0x44000000),
-                              blurRadius: 15,
-                              offset: Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Background glow effect
-                            Container(
-                              height: 55,
-                              width: 55,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    const Color(0xFFE8FA7A).withOpacity(0.4),
-                                    const Color(0xFFE8FA7A).withOpacity(0.0),
-                                  ],
-                                  stops: const [0.1, 1.0],
-                                ),
-                              ),
+                        child: ShaderMask(
+                          blendMode: BlendMode.srcIn,
+                          shaderCallback: (bounds) => logoGradient.createShader(bounds),
+                          child: const Center(
+                            child: Text(
+                              "F",
+                              style: TextStyle(fontSize: 50, fontWeight: FontWeight.w900),
                             ),
-                            // Text with gradient
-                            ShaderMask(
-                              blendMode: BlendMode.srcIn,
-                              shaderCallback: (bounds) => const LinearGradient(
-                                colors: [Color(0xFFE8FA7A), Color(0xFFA3E635), Color(0xFF86C332)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                stops: [0.0, 0.7, 1.0],
-                              ).createShader(
-                                Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                              ),
-                              child: const Text(
-                                "F",
-                                style: TextStyle(
-                                  fontSize: 50,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1,
-                                  shadows: [
-                                    Shadow(
-                                      color: Color(0x60000000),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
                       ShaderMask(
                         blendMode: BlendMode.srcIn,
-                        shaderCallback: (bounds) => logoGradient.createShader(
-                          Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                        ),
+                        shaderCallback: (bounds) => logoGradient.createShader(bounds),
                         child: const Text(
                           "FinSetu",
-                          style: TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -146,89 +87,44 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                 ),
               ),
               const Spacer(flex: 2),
-              const SizedBox(height: 24),
-              // Heading with improved styling
+              // Heading and subtitle
               const Text(
-                "It's time to\nstart investing",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  height: 1.1,
-                  letterSpacing: -0.5,
-                ),
+                "It's time to\nstart Analyzing...",
+                style: TextStyle(color: Colors.white, fontSize: 35, fontWeight: FontWeight.bold, height: 1.1),
               ),
               const SizedBox(height: 16),
-              // Subtitle with improved styling
-              const Text(
-                "Build your financial future\nwith insights that work.",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 18,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 48),
-              // Feature points with enhanced visuals
-              _buildFeatureItem(
-                icon: Icons.bar_chart,
-                text: "Personalized Portfolio",
-                gradient: logoGradient,
-              ),
-              const SizedBox(height: 24),
-              _buildFeatureItem(
-                icon: Icons.notifications,
-                text: "Real-Time Alerts",
-                gradient: logoGradient,
-              ),
-              const SizedBox(height: 24),
-              _buildFeatureItem(
-                icon: Icons.smart_toy,
-                text: "AI-Powered Suggestions",
-                gradient: logoGradient,
-              ),
+             
+              const SizedBox(height: 32),
+              // Feature points
+              _buildFeatureItem(icon: Icons.bar_chart, text: "Personalized Portfolio", gradient: logoGradient),
+              const SizedBox(height: 16),
+              _buildFeatureItem(icon: Icons.notifications, text: "Real-Time Alerts", gradient: logoGradient),
+              const SizedBox(height: 16),
+              _buildFeatureItem(icon: Icons.smart_toy, text: "AI-Powered Suggestions", gradient: logoGradient),
               const Spacer(flex: 2),
-              // Get Started Button with improved visuals and page transition
+              // Get Started Button
               _buildGradientButton(
-                onPressed: () {
-                  HapticFeedback.mediumImpact();
-                  _navigateToSignup(context);
-                },
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SignupPage())),
                 gradient: logoGradient,
-                child: const Text(
-                  'Get Started',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
+                child: const Text('Get Started', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
               ),
-              const SizedBox(height: 24),
-              // Your data is secure with improved visuals
+              const SizedBox(height: 16),
+              // Data security indication
               Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ShaderMask(
                       blendMode: BlendMode.srcIn,
-                      shaderCallback: (bounds) => logoGradient.createShader(
-                        Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                      ),
+                      shaderCallback: (bounds) => logoGradient.createShader(bounds),
                       child: const Icon(Icons.shield, size: 18),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      "Your data is secure",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
+                    const Text("Your data is secure", style: TextStyle(color: Colors.white70, fontSize: 14)),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -236,20 +132,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
     );
   }
 
-  void _navigateToSignup(BuildContext context) {
-    // Simple navigation without animations
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const SignupPage(),
-      ),
-    );
-  }
-
-  Widget _buildFeatureItem({
-    required IconData icon,
-    required String text,
-    required Gradient gradient,
-  }) {
+  Widget _buildFeatureItem({required IconData icon, required String text, required Gradient gradient}) {
     return Row(
       children: [
         Container(
@@ -260,54 +143,30 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
           ),
           child: ShaderMask(
             blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) => gradient.createShader(
-              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-            ),
+            shaderCallback: (bounds) => gradient.createShader(bounds),
             child: Icon(icon, size: 24),
           ),
         ),
         const SizedBox(width: 16),
-        Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(text, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500)),
       ],
     );
   }
 
-  Widget _buildGradientButton({
-    required VoidCallback onPressed,
-    required Widget child,
-    required Gradient gradient,
-  }) {
+  Widget _buildGradientButton({required VoidCallback onPressed, required Widget child, required Gradient gradient}) {
     return Container(
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE8FA7A).withOpacity(0.3),
-            blurRadius: 12,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: const Color(0xFFE8FA7A).withOpacity(0.3), blurRadius: 12)],
       ),
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
-          foregroundColor: Colors.black,
           minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
           elevation: 0,
-          shadowColor: Colors.transparent,
         ),
         child: child,
       ),
