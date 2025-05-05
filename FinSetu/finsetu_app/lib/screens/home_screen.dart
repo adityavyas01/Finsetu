@@ -395,10 +395,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildBalanceInfoItem("Income", "₹ 34,200", Icons.arrow_downward),
+                      child: _buildBalanceInfoItem(
+                        "Income", 
+                        "₹ 34,200", 
+                        Icons.arrow_upward, // Changed from downward to upward 
+                        Colors.green),
                     ),
                     Expanded(
-                      child: _buildBalanceInfoItem("Expenses", "₹ 9,700", Icons.arrow_upward),
+                      child: _buildBalanceInfoItem(
+                        "Expenses", 
+                        "₹ 9,700", 
+                        Icons.arrow_downward, // Changed from upward to downward
+                        Colors.red),
                     ),
                   ],
                 ),
@@ -453,7 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBalanceInfoItem(String title, String value, IconData icon) {
+  Widget _buildBalanceInfoItem(String title, String value, IconData icon, Color arrowColor) {
     return Row(
       children: [
         Container(
@@ -462,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.black.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 18, color: Colors.black),
+          child: Icon(icon, size: 18, color: arrowColor),
         ),
         const SizedBox(width: 8),
         Column(
@@ -491,10 +499,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildQuickActionsGrid(Color bgColor, Color primaryTextColor, Color secondaryTextColor, LinearGradient gradient) {
     final actions = [
-      {'icon': Icons.account_balance_wallet, 'label': 'Add Money'},
-      {'icon': Icons.send, 'label': 'Send Money'},
-      {'icon': Icons.schedule, 'label': 'Scheduled'},
-      {'icon': Icons.group_outlined, 'label': 'Split Bills'},
+      {'icon': Icons.add_circle_outline, 'label': 'Add Txn'}, // Shortened "Transaction" to "Txn"
+      {'icon': Icons.account_balance_wallet, 'label': 'Budget'},
+      {'icon': Icons.calendar_today, 'label': 'Subscriptions'}, // Shortened "Subscription" to "Sub"
+      {'icon': Icons.group_outlined, 'label': 'Split Bills'}, // Added line break for consistency
     ];
 
     return GridView.builder(
@@ -545,9 +553,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 actions[index]['label'] as String,
                 style: TextStyle(
                   color: secondaryTextColor,
-                  fontSize: 12,
+                  fontSize: 11, // Reduced font size slightly
+                  height: 1.2, // Tighter line height for better fit
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 2, // Allow up to 2 lines
+                overflow: TextOverflow.visible, // Ensure text is fully visible
               ),
             ],
           ),

@@ -72,6 +72,7 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
       appBar: AppBar(
         backgroundColor: darkSurfaceColor,
         elevation: 0,
+        toolbarHeight: 80, // Increased height to add space before
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: primaryTextColor),
           onPressed: () => Navigator.pop(context),
@@ -116,7 +117,7 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
                 Rect.fromLTWH(0, 0, bounds.width, bounds.height),
               ),
               child: Text(
-                widget.group != null ? "Split with ${widget.group!.name}" : "Split Bill",
+                widget.group != null ? widget.group!.name : "Split Bill",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -127,19 +128,34 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
           ],
         ),
         bottom: !isWideScreen
-            ? TabBar(
-                controller: _tabController,
-                indicatorColor: accentColor,
-                tabs: const [
-                  Tab(text: "ADD EXPENSE"),
-                  Tab(text: "SUMMARY"),
-                ],
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: Column(
+                  children: [
+                    TabBar(
+                      controller: _tabController,
+                      indicatorColor: accentColor,
+                      tabs: const [
+                        Tab(text: "ADD EXPENSE"),
+                        Tab(text: "SUMMARY"),
+                      ],
+                    ),
+                    const SizedBox(height: 16), // Add space after TabBar
+                  ],
+                ),
               )
             : null,
       ),
       body: isWideScreen
-          ? _buildWideScreenLayout(mainGradient, accentColor, primaryTextColor, secondaryTextColor, inputFillColor)
-          : _buildMobileScreenLayout(mainGradient, accentColor, primaryTextColor, secondaryTextColor, inputFillColor),
+        ? Column(
+            children: [
+              const SizedBox(height: 16), // Add space after AppBar for wide screen
+              Expanded(
+                child: _buildWideScreenLayout(mainGradient, accentColor, primaryTextColor, secondaryTextColor, inputFillColor),
+              ),
+            ],
+          )
+        : _buildMobileScreenLayout(mainGradient, accentColor, primaryTextColor, secondaryTextColor, inputFillColor),
     );
   }
 

@@ -378,6 +378,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
       appBar: AppBar(
         backgroundColor: darkSurfaceColor,
         elevation: 0,
+        toolbarHeight: 80, // Increased height to add space before
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: primaryTextColor),
           onPressed: () => Navigator.pop(context),
@@ -435,6 +436,9 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Add space after AppBar
+          const SizedBox(height: 16),
+          
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             child: Text(
@@ -643,14 +647,6 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                         ),
                       ),
                     ),
-                  const SizedBox(width: 12),
-                  Text(
-                    "${group.members.length} members",
-                    style: TextStyle(
-                      color: secondaryTextColor,
-                      fontSize: 14,
-                    ),
-                  ),
                 ],
               ),
             ],
