@@ -111,11 +111,16 @@ class ApiService {
         final responseData = jsonDecode(response.body);
         // Store the user ID
         if (responseData['data'] != null && responseData['data']['id'] != null) {
-          setUserId(responseData['data']['id'].toString());
+          final id = responseData['data']['id'].toString();
+          print('Setting user ID: $id');
+          setUserId(id);
+        } else {
+          print('Warning: No user ID in response data');
+          print('Response data: $responseData');
         }
         return {
           'success': true,
-          'data': responseData,
+          'data': responseData['data'],
           'message': responseData['message'] ?? 'Login successful',
         };
       } else {
