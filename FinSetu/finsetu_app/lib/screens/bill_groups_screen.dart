@@ -104,7 +104,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
             return AlertDialog(
               backgroundColor: const Color(0xFF1E1E1E),
               title: const Text('Create New Group', style: TextStyle(color: Colors.white)),
-              content: Container(
+              content: SizedBox(
                 width: double.maxFinite,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -439,8 +439,8 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
           // Add space after AppBar
           const SizedBox(height: 16),
           
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
             child: Text(
               "Select a group to split bills",
               style: TextStyle(
@@ -471,9 +471,9 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                     ),
                   ],
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.add_circle, color: Colors.black, size: 20),
                     SizedBox(width: 8),
                     Text(
@@ -498,7 +498,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   "Your Groups",
                   style: TextStyle(
                     color: primaryTextColor,
@@ -508,7 +508,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                 ),
                 Text(
                   "${_groups.length} groups",
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: secondaryTextColor,
                     fontSize: 14,
                   ),
@@ -522,7 +522,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
           // Group list
           Expanded(
             child: _groups.isEmpty
-                ? Center(
+                ? const Center(
                     child: Text(
                       "You haven't created any groups yet",
                       style: TextStyle(color: secondaryTextColor),
