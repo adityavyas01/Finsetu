@@ -388,6 +388,227 @@ class ApiService {
     }
   }
 
+  // Create a new bill in a group
+  static Future<Map<String, dynamic>> createBill({
+    required String groupId,
+    required String title,
+    required double amount,
+    required String paidBy,
+    required List<Map<String, dynamic>> splits,
+  }) async {
+    try {
+      final url = '$baseUrl/api/groups/$groupId/bills';
+      print('=== Create Bill Request ===');
+      print('URL: $url');
+      print('Group ID: $groupId');
+      print('Title: $title');
+      print('Amount: $amount');
+      print('Paid By: $paidBy');
+      print('Splits: $splits');
+      
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $userToken',
+        },
+        body: jsonEncode({
+          'title': title,
+          'amount': amount,
+          'paidBy': paidBy,
+          'splits': splits,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== Create Bill Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'message': responseData['message'],
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Failed to create bill';
+        } catch (e) {
+          errorMessage = 'Failed to create bill: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print('=== Create Bill Error ===');
+      print('Error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Get all bills for a group
+  static Future<Map<String, dynamic>> getGroupBills(String groupId) async {
+    try {
+      final url = '$baseUrl/api/groups/$groupId/bills';
+      print('=== Get Group Bills Request ===');
+      print('URL: $url');
+      print('Group ID: $groupId');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $userToken',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== Get Group Bills Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'data': responseData['data'],
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Failed to fetch bills';
+        } catch (e) {
+          errorMessage = 'Failed to fetch bills: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print('=== Get Group Bills Error ===');
+      print('Error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Delete a bill
+  static Future<Map<String, dynamic>> deleteBill({
+    required String groupId,
+    required String billId,
+  }) async {
+    try {
+      final url = '$baseUrl/api/groups/$groupId/bills/$billId';
+      print('=== Delete Bill Request ===');
+      print('URL: $url');
+      print('Group ID: $groupId');
+      print('Bill ID: $billId');
+      
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $userToken',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== Delete Bill Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': responseData['message'],
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Failed to delete bill';
+        } catch (e) {
+          errorMessage = 'Failed to delete bill: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print('=== Delete Bill Error ===');
+      print('Error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Get bill summary for a group
+  static Future<Map<String, dynamic>> getGroupBillSummary(String groupId) async {
+    try {
+      final url = '$baseUrl/api/groups/$groupId/bills/summary';
+      print('=== Get Group Bill Summary Request ===');
+      print('URL: $url');
+      print('Group ID: $groupId');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $userToken',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== Get Group Bill Summary Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'data': responseData['data'],
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Failed to fetch bill summary';
+        } catch (e) {
+          errorMessage = 'Failed to fetch bill summary: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print('=== Get Group Bill Summary Error ===');
+      print('Error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
   // Static variable to store the user's token
   static String? userToken;
 
