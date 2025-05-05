@@ -10,6 +10,7 @@ initDb().catch(console.error);
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const groupRoutes = require('./routes/groupRoutes');
 
 // Initialize express app
 const app = express();
@@ -27,6 +28,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/groups', groupRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

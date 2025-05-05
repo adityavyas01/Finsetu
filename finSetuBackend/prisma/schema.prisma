@@ -13,14 +13,15 @@ datasource db {
 
 // Define your models here
 model User {
-  id              Int      @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   username        String
-  phoneNumber     String   @unique
+  phoneNumber     String        @unique
   password        String
-  isPhoneVerified Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isPhoneVerified Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   otps            Otp[]
+  groupMembers    GroupMember[]
 }
 
 model Otp {
@@ -31,4 +32,25 @@ model Otp {
   createdAt   DateTime @default(now())
   expiresAt   DateTime
   user        User     @relation(fields: [userId], references: [id])
+}
+
+model Group {
+  id          Int           @id @default(autoincrement())
+  name        String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  createdBy   Int          // ID of the user who created the group
+  members     GroupMember[]
+}
+
+model GroupMember {
+  id        Int      @id @default(autoincrement())
+  groupId   Int
+  userId    Int
+  joinedAt  DateTime @default(now())
+  isAdmin   Boolean  @default(false)
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId]) // Prevent duplicate memberships
 } 

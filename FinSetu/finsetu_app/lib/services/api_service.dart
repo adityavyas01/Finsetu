@@ -230,4 +230,169 @@ class ApiService {
       };
     }
   }
+
+  // Get user's groups
+  static Future<Map<String, dynamic>> getUserGroups() async {
+    try {
+      final url = '$baseUrl/api/groups';
+      print('=== Get User Groups Request ===');
+      print('URL: $url');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $userToken', // You'll need to store the token after login
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== Get User Groups Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'data': responseData['data'],
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Failed to fetch groups';
+        } catch (e) {
+          errorMessage = 'Failed to fetch groups: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print('=== Get User Groups Error ===');
+      print('Error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Create a new group
+  static Future<Map<String, dynamic>> createGroup({
+    required String name,
+    required List<String> memberIds,
+  }) async {
+    try {
+      final url = '$baseUrl/api/groups';
+      print('=== Create Group Request ===');
+      print('URL: $url');
+      print('Name: $name');
+      print('Members: $memberIds');
+      
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $userToken',
+        },
+        body: jsonEncode({
+          'name': name,
+          'members': memberIds,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== Create Group Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'message': responseData['message'],
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Failed to create group';
+        } catch (e) {
+          errorMessage = 'Failed to create group: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print('=== Create Group Error ===');
+      print('Error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Delete a group
+  static Future<Map<String, dynamic>> deleteGroup(String groupId) async {
+    try {
+      final url = '$baseUrl/api/groups/$groupId';
+      print('=== Delete Group Request ===');
+      print('URL: $url');
+      
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $userToken',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== Delete Group Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': responseData['message'],
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Failed to delete group';
+        } catch (e) {
+          errorMessage = 'Failed to delete group: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print('=== Delete Group Error ===');
+      print('Error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Static variable to store the user's token
+  static String? userToken;
+
+  // Method to set the token after login
+  static void setToken(String token) {
+    userToken = token;
+  }
 } 
