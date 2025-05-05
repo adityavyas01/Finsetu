@@ -2,7 +2,9 @@
 
 #include <optional>
 
-#include "flutter/generated_plugin_registrant.h"
+#include "resource.h"
+
+
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -24,8 +26,15 @@ bool FlutterWindow::OnCreate() {
   if (!flutter_controller_->engine() || !flutter_controller_->view()) {
     return false;
   }
-  RegisterPlugins(flutter_controller_->engine());
+ 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+
+  // Load application icon
+  HICON icon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON));
+  if (icon) {
+    SendMessage(GetHandle(), WM_SETICON, ICON_BIG, (LPARAM)icon);
+    SendMessage(GetHandle(), WM_SETICON, ICON_SMALL, (LPARAM)icon);
+  }
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();

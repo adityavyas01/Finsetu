@@ -16,10 +16,9 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
   late List<Person> _people;
 
   bool _isEvenSplit = true;
-  bool _isItemized = false;
-  List<BillItem> _billItems = [];
+  final List<BillItem> _billItems = [];
   
-  List<Expense> _expenses = [];
+  final List<Expense> _expenses = [];
   double _totalExpenseAmount = 0.0;
 
   TabController? _tabController;
@@ -483,7 +482,6 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
                       isSelected: _isEvenSplit,
                       onTap: () => setState(() {
                         _isEvenSplit = true;
-                        _isItemized = false;
                       }),
                       accentColor: accentColor,
                       primaryTextColor: primaryTextColor,
@@ -494,7 +492,6 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
                       isSelected: !_isEvenSplit,
                       onTap: () => setState(() {
                         _isEvenSplit = false;
-                        _isItemized = false;
                       }),
                       accentColor: accentColor,
                       primaryTextColor: primaryTextColor,
@@ -627,7 +624,6 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
                 
                 // Reset split type to even for next expense
                 _isEvenSplit = true;
-                _isItemized = false;
               });
               
               // Switch to summary tab in mobile view
@@ -933,9 +929,9 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
 
         const SizedBox(height: 24),
 
-        // Per person breakdown
+        // Replace "Per person breakdown" with "Settlement Details"
         Text(
-          "Amount Per Person",
+          "Settlement Details",
           style: TextStyle(
             color: primaryTextColor,
             fontSize: 18,
@@ -943,33 +939,102 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
           ),
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: inputFillColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Each person pays",
+        
+        // No expenses yet message
+        if (_expenses.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: inputFillColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                "Add expenses to see settlement details",
                 style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
+                  color: secondaryTextColor,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-              Text(
-                "₹ ${perPersonAmount.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            ),
+          )
+        else
+          // Payment flow information
+          Column(
+            children: [
+              // Find the payer - consider first person who is "You" as the payer
+              // In a real app, this would come from the expense record
+              ..._people.where((p) => p.isYou).map((payer) {
+                return Column(
+                  children: _people.where((receiver) => !receiver.isYou).map((receiver) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: inputFillColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: accentColor.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: accentColor,
+                            child: Text(
+                              "Y",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.arrow_forward,
+                            color: secondaryTextColor,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 12),
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.grey[700],
+                            child: Text(
+                              receiver.name[0].toUpperCase(),
+                              style: TextStyle(
+                                color: primaryTextColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              "You get from ${receiver.name}",
+                              style: TextStyle(
+                                color: primaryTextColor,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            "₹ ${perPersonAmount.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: accentColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                );
+              }).toList(),
             ],
           ),
-        ),
 
         const SizedBox(height: 24),
 
@@ -1004,38 +1069,6 @@ class _SplitBillScreenState extends State<SplitBillScreen> with SingleTickerProv
         ],
 
         const SizedBox(height: 40),
-
-        // Send request button
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Split request sent!"),
-                  backgroundColor: Colors.black87,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accentColor,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              "SEND SPLIT REQUEST",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
