@@ -6,7 +6,7 @@ exports.createGroup = async (req, res) => {
   try {
     console.log('=== Create Group Request ===');
     console.log('Request Body:', req.body);
-    console.log('User ID:', req.user.id);
+    console.log('User:', req.user);
     
     const { name, members, description } = req.body;
     const createdBy = req.user.id;

@@ -12,12 +12,13 @@ class ApiService {
     }
   }
   
-  // Static variable to store the user's ID
-  static String? userId;
+  // Static variable to store the user's phone number
+  static String? userPhoneNumber;
 
-  // Method to set the user ID after login
-  static void setUserId(String id) {
-    userId = id;
+  // Method to set the phone number after login
+  static void setUserPhoneNumber(String phone) {
+    userPhoneNumber = phone;
+    print('Setting user phone number: $phone');
   }
 
   // Register a new user
@@ -109,13 +110,11 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        // Store the user ID
-        if (responseData['data'] != null && responseData['data']['id'] != null) {
-          final id = responseData['data']['id'].toString();
-          print('Setting user ID: $id');
-          setUserId(id);
+        // Store the phone number
+        if (responseData['data'] != null && responseData['data']['phoneNumber'] != null) {
+          setUserPhoneNumber(responseData['data']['phoneNumber']);
         } else {
-          print('Warning: No user ID in response data');
+          print('Warning: No phone number in response data');
           print('Response data: $responseData');
         }
         return {
@@ -149,7 +148,7 @@ class ApiService {
   // Get user's groups
   static Future<Map<String, dynamic>> getUserGroups() async {
     try {
-      if (userId == null) {
+      if (userPhoneNumber == null) {
         return {
           'success': false,
           'message': 'User not logged in',
@@ -159,14 +158,14 @@ class ApiService {
       final url = '$baseUrl/api/groups';
       print('=== Get User Groups Request ===');
       print('URL: $url');
-      print('User ID: $userId');
+      print('Phone Number: $userPhoneNumber');
       
       final response = await http.get(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-User-ID': userId!,
+          'X-Phone-Number': userPhoneNumber!,
         },
       ).timeout(const Duration(seconds: 10));
 
@@ -209,7 +208,7 @@ class ApiService {
     required List<String> memberIds,
   }) async {
     try {
-      if (userId == null) {
+      if (userPhoneNumber == null) {
         return {
           'success': false,
           'message': 'User not logged in',
@@ -221,14 +220,14 @@ class ApiService {
       print('URL: $url');
       print('Name: $name');
       print('Members: $memberIds');
-      print('User ID: $userId');
+      print('Phone Number: $userPhoneNumber');
       
       final response = await http.post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-User-ID': userId!,
+          'X-Phone-Number': userPhoneNumber!,
         },
         body: jsonEncode({
           'name': name,
@@ -273,7 +272,7 @@ class ApiService {
   // Delete a group
   static Future<Map<String, dynamic>> deleteGroup(String groupId) async {
     try {
-      if (userId == null) {
+      if (userPhoneNumber == null) {
         return {
           'success': false,
           'message': 'User not logged in',
@@ -283,14 +282,14 @@ class ApiService {
       final url = '$baseUrl/api/groups/$groupId';
       print('=== Delete Group Request ===');
       print('URL: $url');
-      print('User ID: $userId');
+      print('Phone Number: $userPhoneNumber');
       
       final response = await http.delete(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-User-ID': userId!,
+          'X-Phone-Number': userPhoneNumber!,
         },
       ).timeout(const Duration(seconds: 10));
 
