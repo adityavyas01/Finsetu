@@ -6,28 +6,28 @@ const auth = async (req, res, next) => {
     console.log('=== Auth Middleware ===');
     console.log('Headers:', req.headers);
     
-    const phoneNumber = req.headers['x-phone-number'];
-    console.log('Phone Number from header:', phoneNumber);
+    const userId = req.headers['x-user-id'];
+    console.log('User ID from header:', userId);
     
-    if (!phoneNumber) {
-      console.log('No phone number provided in headers');
+    if (!userId) {
+      console.log('No user ID provided in headers');
       return res.status(401).json({
         success: false,
-        message: 'Authentication required. Phone number not provided.'
+        message: 'Authentication required. User ID not provided.'
       });
     }
 
     // Verify user exists
     const user = await prisma.user.findUnique({
-      where: { phoneNumber: phoneNumber }
+      where: { id: parseInt(userId) }
     });
     console.log('Found user:', user ? 'Yes' : 'No');
 
     if (!user) {
-      console.log('Invalid phone number:', phoneNumber);
+      console.log('Invalid user ID:', userId);
       return res.status(401).json({
         success: false,
-        message: 'Invalid phone number'
+        message: 'Invalid user ID'
       });
     }
 
