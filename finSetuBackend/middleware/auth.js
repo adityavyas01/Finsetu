@@ -1,34 +1,39 @@
-const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../config/environment');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-exports.authenticateToken = (req, res, next) => {
+const auth = async (req, res, next) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
+    const userId = req.headers['x-user-id'];
+    
+    if (!userId) {
       return res.status(401).json({
         success: false,
-        message: 'Authentication token required'
+        message: 'Authentication required. User ID not provided.'
       });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-      if (err) {
-        return res.status(403).json({
-          success: false,
-          message: 'Invalid or expired token'
-        });
-      }
-
-      req.user = user;
-      next();
+    // Verify user exists
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }
     });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid user ID'
+      });
+    }
+
+    // Add user to request object
+    req.user = user;
+    next();
   } catch (error) {
     console.error('Auth middleware error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Authentication failed'
+      message: 'Internal server error during authentication'
     });
   }
-}; 
+};
+
+module.exports = auth; 

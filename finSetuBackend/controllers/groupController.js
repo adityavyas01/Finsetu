@@ -9,7 +9,7 @@ exports.createGroup = async (req, res) => {
     console.log('User ID:', req.user.id);
     
     const { name, members, description } = req.body;
-    const createdBy = parseInt(req.user.id);
+    const createdBy = req.user.id;
 
     // Validate input
     if (!name || !members || !Array.isArray(members) || members.length === 0) {
@@ -140,10 +140,11 @@ exports.createGroup = async (req, res) => {
   }
 };
 
-// Get all groups for a user
+// Get user's groups
 exports.getUserGroups = async (req, res) => {
   try {
-    const userId = parseInt(req.user.id); // Will be set by auth middleware
+    const userId = req.user.id;
+    console.log('Getting groups for user:', userId);
 
     const groups = await prisma.group.findMany({
       where: {
@@ -165,9 +166,6 @@ exports.getUserGroups = async (req, res) => {
             }
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
 
@@ -175,6 +173,7 @@ exports.getUserGroups = async (req, res) => {
     const formattedGroups = groups.map(group => ({
       id: group.id,
       name: group.name,
+      description: group.description,
       createdAt: group.createdAt,
       memberCount: group.members.length,
       members: group.members.map(member => ({
@@ -194,8 +193,7 @@ exports.getUserGroups = async (req, res) => {
     console.error('Get user groups error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to fetch groups',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Failed to fetch groups'
     });
   }
 };
@@ -203,29 +201,29 @@ exports.getUserGroups = async (req, res) => {
 // Delete a group
 exports.deleteGroup = async (req, res) => {
   try {
-    const groupId = parseInt(req.params.groupId);
-    const userId = parseInt(req.user.id); // Will be set by auth middleware
+    const { groupId } = req.params;
+    const userId = req.user.id;
 
     // Check if user is admin of the group
-    const membership = await prisma.groupMember.findFirst({
+    const groupMember = await prisma.groupMember.findFirst({
       where: {
-        groupId,
-        userId,
+        groupId: parseInt(groupId),
+        userId: userId,
         isAdmin: true
       }
     });
 
-    if (!membership) {
+    if (!groupMember) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to delete this group'
+        message: 'Only group admins can delete groups'
       });
     }
 
-    // Delete the group (this will cascade delete all members due to our schema)
+    // Delete the group (cascade will handle group members)
     await prisma.group.delete({
       where: {
-        id: groupId
+        id: parseInt(groupId)
       }
     });
 
@@ -237,8 +235,7 @@ exports.deleteGroup = async (req, res) => {
     console.error('Delete group error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to delete group',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Failed to delete group'
     });
   }
 }; 
