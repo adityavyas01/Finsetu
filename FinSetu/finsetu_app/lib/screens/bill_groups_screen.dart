@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:finsetu_app/screens/split_bill_screen.dart';
+import 'package:finsetu_app/services/api_service.dart';
 
 class BillGroup {
   final String id;
@@ -13,6 +14,27 @@ class BillGroup {
     required this.members,
     required this.lastActivity,
   });
+
+  // Factory constructor to create a BillGroup from API response
+  factory BillGroup.fromJson(Map<String, dynamic> json) {
+    List<Person> membersList = [];
+    if (json['members'] != null) {
+      membersList = (json['members'] as List)
+          .map((member) => Person(
+                name: member['name'] ?? '',
+                isYou: member['isYou'] ?? false,
+                avatarUrl: member['avatarUrl'],
+              ))
+          .toList();
+    }
+
+    return BillGroup(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      members: membersList,
+      lastActivity: json['lastActivity'] ?? 'Unknown',
+    );
+  }
 }
 
 class Person {
@@ -50,40 +72,49 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
   // To track selected people when creating a group
   final List<Person> _selectedPeople = [];
   
-  // Mock data for groups
-  final List<BillGroup> _groups = [
-    BillGroup(
-      id: '1',
-      name: 'Roommates',
-      members: [
-        Person(name: 'You', isYou: true),
-        Person(name: 'Alex'),
-        Person(name: 'Taylor'),
-      ],
-      lastActivity: '2 days ago',
-    ),
-    BillGroup(
-      id: '2',
-      name: 'Trip to Goa',
-      members: [
-        Person(name: 'You', isYou: true),
-        Person(name: 'Rishi'),
-        Person(name: 'Priya'),
-        Person(name: 'Neha'),
-      ],
-      lastActivity: '1 week ago',
-    ),
-    BillGroup(
-      id: '3',
-      name: 'Dinner Group',
-      members: [
-        Person(name: 'You', isYou: true),
-        Person(name: 'Amit'),
-        Person(name: 'Sneha'),
-      ],
-      lastActivity: '2 weeks ago',
-    ),
-  ];
+  // Groups list
+  List<BillGroup> _groups = [];
+  
+  // Loading and error state variables
+  bool _isLoading = false;
+  String? _errorMessage;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadGroups();
+  }
+
+  // Load groups from API
+  Future<void> _loadGroups() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    try {
+      final response = await ApiService.getUserGroups();
+      
+      if (response['success']) {
+        setState(() {
+          _groups = (response['data'] as List)
+              .map((groupJson) => BillGroup.fromJson(groupJson))
+              .toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = response['message'] ?? 'Failed to load groups';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error loading groups: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -252,26 +283,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                 ),
                 TextButton(
                   onPressed: _selectedPeople.length > 1 && _newGroupNameController.text.trim().isNotEmpty
-                      ? () {
-                          final newGroup = BillGroup(
-                            id: DateTime.now().millisecondsSinceEpoch.toString(),
-                            name: _newGroupNameController.text,
-                            members: List.from(_selectedPeople),
-                            lastActivity: 'Just now',
-                          );
-                          
-                          setState(() {
-                            this.setState(() {
-                              _groups.add(newGroup);
-                            });
-                            _newGroupNameController.clear();
-                          });
-                          
-                          Navigator.pop(context);
-                          
-                          // Navigate to split bill screen with the new group
-                          _navigateToSplitBill(newGroup);
-                        }
+                      ? _createNewGroup
                       : null,
                   child: Text(
                     'Create', 
@@ -290,13 +302,90 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
     );
   }
 
+  void _createNewGroup() async {
+    if (_selectedPeople.length <= 1 || _newGroupNameController.text.trim().isEmpty) {
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      // Extract member IDs - in a real app, these would be actual user IDs
+      // For now, we're just using their names as IDs
+      List<String> memberIds = _selectedPeople
+          .where((p) => !p.isYou) // Filter out "You" as it's the current user
+          .map((p) => p.name)
+          .toList();
+      
+      final response = await ApiService.createGroup(
+        name: _newGroupNameController.text.trim(),
+        memberIds: memberIds,
+      );
+      
+      if (response['success']) {
+        // Add the new group to the local list
+        final newGroup = BillGroup.fromJson(response['data']);
+        
+        setState(() {
+          _groups.add(newGroup);
+          _isLoading = false;
+        });
+        
+        Navigator.pop(context); // Close the dialog
+        
+        // Navigate to split bill screen with the new group
+        _navigateToSplitBill(newGroup);
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Group "${newGroup.name}" created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        Navigator.pop(context);
+        
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message']),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating group: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   void _navigateToSplitBill(BillGroup group) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SplitBillScreen(group: group),
       ),
-    );
+    ).then((_) {
+      // Refresh groups when returning from SplitBillScreen
+      _loadGroups();
+    });
   }
 
   void _deleteGroup(BillGroup group) {
@@ -315,42 +404,64 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
             child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _groups.removeWhere((g) => g.id == group.id);
-              });
+            onPressed: () async {
               Navigator.pop(context);
               
-              // Show confirmation
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(
-                        Icons.delete_outline,
-                        color: Colors.white,
-                        size: 20,
+              setState(() {
+                _isLoading = true;
+              });
+              
+              try {
+                final response = await ApiService.deleteGroup(group.id);
+                
+                if (response['success']) {
+                  setState(() {
+                    _groups.removeWhere((g) => g.id == group.id);
+                    _isLoading = false;
+                  });
+                  
+                  // Show confirmation
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(
+                            Icons.delete_outline,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text('${group.name} has been deleted'),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Text('${group.name} has been deleted'),
-                    ],
+                      backgroundColor: Colors.black87,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } else {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(response['message']),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } catch (e) {
+                setState(() {
+                  _isLoading = false;
+                });
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error deleting group: ${e.toString()}'),
+                    backgroundColor: Colors.red,
                   ),
-                  backgroundColor: Colors.black87,
-                  behavior: SnackBarBehavior.floating,
-                  action: SnackBarAction(
-                    label: 'UNDO',
-                    textColor: const Color(0xFFE8FA7A),
-                    onPressed: () {
-                      setState(() {
-                        _groups.add(group);
-                        // Sort groups to restore original position
-                        // This is simplified; in a real app you might want to store the index
-                        _groups.sort((a, b) => a.id.compareTo(b.id));
-                      });
-                    },
-                  ),
-                ),
-              );
+                );
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
           ),
@@ -433,118 +544,155 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
           ],
         ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Add space after AppBar
-          const SizedBox(height: 16),
-          
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
-            child: Text(
-              "Select a group to split bills",
-              style: TextStyle(
-                color: secondaryTextColor,
-                fontSize: 16,
-              ),
+      body: _isLoading 
+        ? const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE8FA7A)),
             ),
-          ),
-          
-          // Create new group button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: InkWell(
-              onTap: _showCreateGroupDialog,
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: mainGradient,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withOpacity(0.15),
-                      blurRadius: 8,
-                      spreadRadius: 0,
-                      offset: const Offset(0, 2),
+          )
+        : _errorMessage != null
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Error loading groups',
+                    style: TextStyle(color: Colors.red, fontSize: 18),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(color: secondaryTextColor),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadGroups,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE8FA7A),
+                      foregroundColor: Colors.black,
                     ),
-                  ],
+                    child: Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Add space after AppBar
+                const SizedBox(height: 16),
+                
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
+                  child: Text(
+                    "Select a group to split bills",
+                    style: TextStyle(
+                      color: secondaryTextColor,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add_circle, color: Colors.black, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      "CREATE NEW GROUP",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                
+                // Create new group button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: InkWell(
+                    onTap: _showCreateGroupDialog,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: mainGradient,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withOpacity(0.15),
+                            blurRadius: 8,
+                            spreadRadius: 0,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_circle, color: Colors.black, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            "CREATE NEW GROUP",
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Existing groups header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Your Groups",
-                  style: TextStyle(
-                    color: primaryTextColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  "${_groups.length} groups",
-                  style: const TextStyle(
-                    color: secondaryTextColor,
-                    fontSize: 14,
+                
+                const SizedBox(height: 24),
+                
+                // Existing groups header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Your Groups",
+                        style: TextStyle(
+                          color: primaryTextColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "${_groups.length} groups",
+                        style: const TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Group list
+                Expanded(
+                  child: _groups.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "You haven't created any groups yet",
+                            style: TextStyle(color: secondaryTextColor),
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadGroups,
+                          color: const Color(0xFFE8FA7A),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: _groups.length,
+                            itemBuilder: (context, index) {
+                              final group = _groups[index];
+                              return _buildGroupItem(
+                                group: group,
+                                inputFillColor: inputFillColor,
+                                accentColor: accentColor,
+                                primaryTextColor: primaryTextColor,
+                                secondaryTextColor: secondaryTextColor,
+                              );
+                            },
+                          ),
+                        ),
                 ),
               ],
             ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Group list
-          Expanded(
-            child: _groups.isEmpty
-                ? const Center(
-                    child: Text(
-                      "You haven't created any groups yet",
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _groups.length,
-                    itemBuilder: (context, index) {
-                      final group = _groups[index];
-                      return _buildGroupItem(
-                        group: group,
-                        inputFillColor: inputFillColor,
-                        accentColor: accentColor,
-                        primaryTextColor: primaryTextColor,
-                        secondaryTextColor: secondaryTextColor,
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -592,7 +740,6 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                           fontSize: 12,
                         ),
                       ),
-                      // Replace PopupMenuButton with a direct IconButton
                       IconButton(
                         icon: const Icon(
                           Icons.delete_outline,
