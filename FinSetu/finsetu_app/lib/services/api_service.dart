@@ -3,20 +3,27 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static String? userId;
-  static const bool isDevelopment = true;
-
+  // Use different URLs for development and production
   static String get baseUrl {
-    return isDevelopment
-        ? 'http://localhost:3000/api'
-        : 'https://your-production-url.com/api';
+    if (kDebugMode) {
+      // In debug mode, use ngrok URL without /api/auth (it will be added in the endpoint)
+      return 'https://11e2-2409-40c4-ef-d547-4591-8a56-c763-d198.ngrok-free.app';
+    } else {
+      // In release mode, use production URL
+      return 'https://api.finsetu.com';
+    }
   }
+  
+  // Static variable to store the user's ID
+  static String? userId;
 
+  // Method to set the user ID after login
   static void setUserId(String id) {
     userId = id;
-    print('User ID set to: $userId');
+    print('Setting user ID: $id');
   }
 
+  // Get headers with user ID
   static Map<String, String> get _headers {
     return {
       'Content-Type': 'application/json',
