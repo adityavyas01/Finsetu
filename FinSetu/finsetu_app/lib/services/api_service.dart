@@ -444,4 +444,35 @@ class ApiService {
       };
     }
   }
+
+  static Future<Map<String, dynamic>> getAllUsers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users'),
+        headers: await _headers(),
+      );
+
+      print('Get All Users Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': true,
+          'data': data['data'],
+        };
+      } else {
+        final error = json.decode(response.body);
+        return {
+          'success': false,
+          'message': error['message'] ?? 'Failed to fetch users',
+        };
+      }
+    } catch (e) {
+      print('Get All Users Error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to fetch users: $e',
+      };
+    }
+  }
 } 

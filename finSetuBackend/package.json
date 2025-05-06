@@ -13,7 +13,9 @@
     "prisma:env": "node prisma-env.js",
     "prisma:generate": "npm run prisma:env && prisma generate --schema=./prisma/schema.prisma",
     "prisma:push": "npm run prisma:env && prisma db push --schema=./prisma/schema.prisma",
-    "prisma:studio": "npm run prisma:env && prisma studio --schema=./prisma/schema.prisma"
+    "prisma:studio": "npm run prisma:env && prisma studio --schema=./prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",
@@ -36,5 +38,8 @@
   },
   "engines": {
     "node": ">=14.0.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
