@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-// import 'package:finsetu_app/screens/split_bill_screen.dart';
 import 'package:finsetu_app/screens/bill_groups_screen.dart';
 import 'package:finsetu_app/screens/login_screen.dart'; // Add this import for logout navigation
+import 'package:finsetu_app/screens/all_transactions_screen.dart'; // Import for AllTransactionsScreen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -275,32 +275,62 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     height: 40,
                     width: 40,
-                    padding: const EdgeInsets.all(6),
+                    padding: EdgeInsets.zero,
                     decoration: BoxDecoration(
                       color: Colors.black,
                       borderRadius: const BorderRadius.all(Radius.circular(12)),
+                      border: Border.all(
+                        color: const Color(0xFFE8FA7A).withOpacity(0.4),
+                        width: 1.5,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: accentColor.withOpacity(0.15),
+                          color: accentColor.withOpacity(0.2),
                           blurRadius: 15,
                           spreadRadius: 1,
                           offset: const Offset(0, 3),
                         ),
+                        const BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
                       ],
                     ),
-                    child: ShaderMask(
-                      blendMode: BlendMode.srcIn,
-                      shaderCallback: (bounds) => mainGradient.createShader(
-                        Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                      ),
-                      child: const Text(
-                        "F",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          height: 25,
+                          width: 25,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                accentColor.withOpacity(0.4),
+                                accentColor.withOpacity(0.0),
+                              ],
+                              stops: const [0.1, 1.0],
+                            ),
+                          ),
                         ),
-                        textAlign: TextAlign.center,
-                      ),
+                        ShaderMask(
+                          blendMode: BlendMode.srcIn,
+                          shaderCallback: (bounds) => mainGradient.createShader(
+                            Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              "F",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                height: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -437,7 +467,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AllTransactionsScreen()),
+                  );
+                },
                 child: ShaderMask(
                   blendMode: BlendMode.srcIn,
                   shaderCallback: (bounds) => mainGradient.createShader(
