@@ -66,9 +66,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
     try {
       final response = await ApiService.createGroup(
-        _nameController.text,
-        _descriptionController.text,
-        _selectedMembers,
+        name: _nameController.text,
+        description: _descriptionController.text,
+        memberIds: _selectedMembers,
       );
 
       if (response['success']) {

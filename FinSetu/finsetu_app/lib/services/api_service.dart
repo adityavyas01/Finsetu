@@ -332,6 +332,7 @@ class ApiService {
   // Create a new group
   static Future<Map<String, dynamic>> createGroup({
     required String name,
+    required String description,
     required List<String> memberIds,
   }) async {
     try {
@@ -346,6 +347,7 @@ class ApiService {
       print('=== Create Group Request ===');
       print('URL: $url');
       print('Name: $name');
+      print('Description: $description');
       print('Members: $memberIds');
       print('User ID: $userId');
       
@@ -354,6 +356,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode({
           'name': name,
+          'description': description,
           'members': memberIds,
         }),
       ).timeout(const Duration(seconds: 10));
@@ -445,11 +448,19 @@ class ApiService {
     }
   }
 
+  // Get all users
   static Future<Map<String, dynamic>> getAllUsers() async {
     try {
+      if (userId == null) {
+        return {
+          'success': false,
+          'message': 'User not logged in',
+        };
+      }
+
       final response = await http.get(
         Uri.parse('$baseUrl/users'),
-        headers: await _headers(),
+        headers: _headers,
       );
 
       print('Get All Users Response: ${response.body}');
