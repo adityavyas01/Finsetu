@@ -40,15 +40,15 @@ const createGroup = async (req, res) => {
       }
     });
 
-    // Format the response
+    // Format the response with string IDs
     const formattedGroup = {
-      id: group.id,
+      id: group.id.toString(),
       name: group.name,
       description: group.description,
       createdAt: group.createdAt,
       memberCount: group.members.length,
       members: group.members.map(member => ({
-        id: member.user.id,
+        id: member.user.id.toString(),
         username: member.user.username,
         phoneNumber: member.user.phoneNumber,
         isAdmin: member.isAdmin
@@ -108,15 +108,15 @@ const getUserGroups = async (req, res) => {
     console.log('Found groups:', groups.length);
     console.log('Groups data:', JSON.stringify(groups, null, 2));
 
-    // Format the groups for response
+    // Format the groups for response with string IDs
     const formattedGroups = groups.map(group => ({
-      id: group.id,
+      id: group.id.toString(),
       name: group.name,
       description: group.description,
       createdAt: group.createdAt,
       memberCount: group.members.length,
       members: group.members.map(member => ({
-        id: member.user.id,
+        id: member.user.id.toString(),
         username: member.user.username,
         phoneNumber: member.user.phoneNumber,
         isAdmin: member.isAdmin
