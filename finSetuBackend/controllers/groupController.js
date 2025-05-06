@@ -144,7 +144,9 @@ exports.createGroup = async (req, res) => {
 exports.getUserGroups = async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log('Getting groups for user:', userId);
+    console.log('=== Get User Groups ===');
+    console.log('User ID:', userId);
+    console.log('User object:', req.user);
 
     const groups = await prisma.group.findMany({
       where: {
@@ -169,6 +171,9 @@ exports.getUserGroups = async (req, res) => {
       }
     });
 
+    console.log('Found groups:', groups.length);
+    console.log('Groups data:', JSON.stringify(groups, null, 2));
+
     // Format the response
     const formattedGroups = groups.map(group => ({
       id: group.id,
@@ -185,12 +190,15 @@ exports.getUserGroups = async (req, res) => {
       isAdmin: group.members.some(member => member.userId === userId && member.isAdmin)
     }));
 
+    console.log('Formatted groups:', JSON.stringify(formattedGroups, null, 2));
+
     return res.status(200).json({
       success: true,
       data: formattedGroups
     });
   } catch (error) {
     console.error('Get user groups error:', error);
+    console.error('Error stack:', error.stack);
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch groups'

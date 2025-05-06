@@ -113,6 +113,7 @@ class ApiService {
         // Store the user ID
         if (responseData['data'] != null && responseData['data']['id'] != null) {
           setUserId(responseData['data']['id'].toString());
+          print('User ID set to: ${responseData['data']['id']}');
         } else {
           print('Warning: No user ID in response data');
           print('Response data: $responseData');
@@ -149,6 +150,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getUserGroups() async {
     try {
       if (userId == null) {
+        print('Error: User ID is null when trying to get groups');
         return {
           'success': false,
           'message': 'User not logged in',
