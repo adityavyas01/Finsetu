@@ -110,7 +110,6 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        // Store the user ID
         if (responseData['data'] != null && responseData['data']['id'] != null) {
           setUserId(responseData['data']['id'].toString());
           print('User ID set to: ${responseData['data']['id']}');
