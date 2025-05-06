@@ -457,26 +457,53 @@ class ApiService {
   // Get all users
   static Future<Map<String, dynamic>> getAllUsers() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/users'),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': currentUserId,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
+      if (userId == null) {
         return {
           'success': false,
-          'message': 'Failed to fetch users: ${response.statusCode}'
+          'message': 'User not logged in',
+        };
+      }
+
+      final url = '$baseUrl/users';
+      print('=== Get All Users Request ===');
+      print('URL: $url');
+      print('User ID: $userId');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
+
+      print('=== Get All Users Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'message': responseData['message'] ?? 'Users fetched successfully',
+        };
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Failed to fetch users';
+        } catch (e) {
+          errorMessage = 'Failed to fetch users: Invalid response from server';
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
         };
       }
     } catch (e) {
+      print('=== Get All Users Error ===');
+      print('Error: $e');
       return {
         'success': false,
-        'message': 'Error fetching users: $e'
+        'message': 'Network error: $e',
       };
     }
   }
