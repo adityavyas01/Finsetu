@@ -457,17 +457,10 @@ class ApiService {
   // Get all users
   static Future<Map<String, dynamic>> getAllUsers() async {
     try {
-      if (userId == null) {
-        return {
-          'success': false,
-          'message': 'User not logged in',
-        };
-      }
-
-      final url = '$baseUrl/users';
+      final url = '$baseUrl/users/all';
       print('=== Get All Users Request ===');
       print('URL: $url');
-      print('User ID: $userId');
+      print('Headers: $_headers');
       
       final response = await http.get(
         Uri.parse(url),

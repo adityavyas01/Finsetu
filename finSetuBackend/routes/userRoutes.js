@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Get all users
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/all', authMiddleware, async (req, res) => {
   try {
     const users = await prisma.user.findMany({
       select: {

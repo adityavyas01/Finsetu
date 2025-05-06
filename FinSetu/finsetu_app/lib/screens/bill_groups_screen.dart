@@ -43,13 +43,23 @@ class Person {
   String name;
   bool isYou;
   String? avatarUrl;
+  String? phoneNumber;
   
   Person({
     required this.id,
     required this.name,
     this.isYou = false,
-    this.avatarUrl
+    this.avatarUrl,
+    this.phoneNumber,
   });
+
+  factory Person.fromJson(Map<String, dynamic> json) {
+    return Person(
+      id: json['id'].toString(),
+      name: json['username'] ?? '',
+      phoneNumber: json['phoneNumber'],
+    );
+  }
 }
 
 class BillGroupsScreen extends StatefulWidget {
@@ -89,12 +99,13 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
       
       if (response['success']) {
         setState(() {
-          _contacts = (response['data'] as List).map((user) => Person(
-            id: user['id'].toString(),
-            name: user['username'] ?? '',
-          )).toList();
+          _contacts = (response['data'] as List)
+              .map((user) => Person.fromJson(user))
+              .toList();
         });
+        print('Loaded ${_contacts.length} users');
       } else {
+        print('Failed to load users: ${response['message']}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message'] ?? 'Failed to load users'),
@@ -103,6 +114,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
         );
       }
     } catch (e) {
+      print('Error loading users: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading users: ${e.toString()}'),
