@@ -7,19 +7,32 @@ const createGroup = async (req, res) => {
     const { name, description, members } = req.body;
     const userId = parseInt(req.user.id);
 
+    console.log('Creating group with:', { name, description, members, userId });
+
+    // Validate input
+    if (!name || !members || !Array.isArray(members)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid input: name and members array are required'
+      });
+    }
+
     // Create the group
     const group = await prisma.group.create({
       data: {
         name,
-        description,
+        description: description || '',
         createdBy: userId,
         members: {
           create: [
             // Add creator as admin
-            { userId: userId, isAdmin: true },
+            {
+              user: { connect: { id: userId } },
+              isAdmin: true
+            },
             // Add other members
             ...members.map(memberId => ({
-              userId: parseInt(memberId),
+              user: { connect: { id: parseInt(memberId) } },
               isAdmin: false
             }))
           ]
@@ -65,7 +78,7 @@ const createGroup = async (req, res) => {
     console.error('Create group error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create group'
+      message: 'Failed to create group: ' + error.message
     });
   }
 };

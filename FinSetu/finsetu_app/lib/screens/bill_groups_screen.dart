@@ -21,6 +21,7 @@ class BillGroup {
     if (json['members'] != null) {
       membersList = (json['members'] as List)
           .map((member) => Person(
+                id: member['id'] ?? '',
                 name: member['name'] ?? '',
                 isYou: member['isYou'] ?? false,
                 avatarUrl: member['avatarUrl'],
@@ -38,11 +39,17 @@ class BillGroup {
 }
 
 class Person {
+  String id;
   String name;
   bool isYou;
   String? avatarUrl;
   
-  Person({required this.name, this.isYou = false, this.avatarUrl});
+  Person({
+    required this.id,
+    required this.name,
+    this.isYou = false,
+    this.avatarUrl
+  });
 }
 
 class BillGroupsScreen extends StatefulWidget {
@@ -56,18 +63,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
   final _newGroupNameController = TextEditingController();
   
   // List of contacts to select from when creating a group
-  final List<Person> _contacts = [
-    Person(name: 'Alex'),
-    Person(name: 'Taylor'),
-    Person(name: 'Rishi'),
-    Person(name: 'Priya'),
-    Person(name: 'Neha'),
-    Person(name: 'Amit'),
-    Person(name: 'Sneha'),
-    Person(name: 'Raj'),
-    Person(name: 'Aarav'),
-    Person(name: 'Meera'),
-  ];
+  List<Person> _contacts = [];
   
   // To track selected people when creating a group
   final List<Person> _selectedPeople = [];
@@ -83,6 +79,37 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
   void initState() {
     super.initState();
     _loadGroups();
+    _loadUsers();
+  }
+
+  // Load users from API
+  Future<void> _loadUsers() async {
+    try {
+      final response = await ApiService.getAllUsers();
+      
+      if (response['success']) {
+        setState(() {
+          _contacts = (response['data'] as List).map((user) => Person(
+            id: user['id'].toString(),
+            name: user['username'] ?? '',
+          )).toList();
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to load users'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading users: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // Load groups from API
@@ -125,7 +152,11 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
   void _showCreateGroupDialog() {
     // Reset selected people list except 'You'
     _selectedPeople.clear();
-    _selectedPeople.add(Person(name: 'You', isYou: true));
+    _selectedPeople.add(Person(
+      id: ApiService.currentUserId.toString(),
+      name: 'You', 
+      isYou: true
+    ));
     
     showDialog(
       context: context,
@@ -167,7 +198,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                           ),
                         ),
                         Text(
-                          '${_selectedPeople.length - 1} selected', // Subtract 1 to exclude "You"
+                          '${_selectedPeople.length - 1} selected',
                           style: const TextStyle(
                             color: Color(0xFFE8FA7A),
                             fontStyle: FontStyle.italic,
@@ -177,7 +208,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                     ),
                     const SizedBox(height: 8),
                     // Show selected people chips
-                    if (_selectedPeople.length > 1) // If more than just "You"
+                    if (_selectedPeople.length > 1)
                       Container(
                         height: 40,
                         margin: const EdgeInsets.only(bottom: 8),
@@ -186,7 +217,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                           itemCount: _selectedPeople.length,
                           itemBuilder: (context, index) {
                             final person = _selectedPeople[index];
-                            if (person.isYou) return Container(); // Skip "You" in the chip display
+                            if (person.isYou) return Container();
                             
                             return Container(
                               margin: const EdgeInsets.only(right: 8),
@@ -229,7 +260,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                         itemCount: _contacts.length,
                         itemBuilder: (context, index) {
                           final person = _contacts[index];
-                          final isSelected = _selectedPeople.any((p) => p.name == person.name);
+                          final isSelected = _selectedPeople.any((p) => p.id == person.id);
                           
                           return ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
@@ -252,7 +283,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
                             onTap: () {
                               setState(() {
                                 if (isSelected) {
-                                  _selectedPeople.removeWhere((p) => p.name == person.name);
+                                  _selectedPeople.removeWhere((p) => p.id == person.id);
                                 } else {
                                   _selectedPeople.add(person);
                                 }
@@ -312,11 +343,10 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
     });
     
     try {
-      // Extract member IDs - in a real app, these would be actual user IDs
-      // For now, we're just using their names as IDs
+      // Extract member IDs - exclude the current user
       List<String> memberIds = _selectedPeople
-          .where((p) => !p.isYou) // Filter out "You" as it's the current user
-          .map((p) => p.name)
+          .where((p) => !p.isYou)
+          .map((p) => p.id)
           .toList();
       
       final response = await ApiService.createGroup(

@@ -3,6 +3,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
+  static String? _baseUrl;
+  static String? _currentUserId;
+
+  static String get baseUrl => _baseUrl ?? '';
+  static String get currentUserId => _currentUserId ?? '';
+
   // Use different URLs for development and production
   static String get baseUrl {
     if (kDebugMode) {
@@ -451,38 +457,26 @@ class ApiService {
   // Get all users
   static Future<Map<String, dynamic>> getAllUsers() async {
     try {
-      if (userId == null) {
-        return {
-          'success': false,
-          'message': 'User not logged in',
-        };
-      }
-
       final response = await http.get(
-        Uri.parse('$baseUrl/users'),
-        headers: _headers,
+        Uri.parse('$baseUrl/api/users'),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUserId,
+        },
       );
 
-      print('Get All Users Response: ${response.body}');
-
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': true,
-          'data': data['data'],
-        };
+        return json.decode(response.body);
       } else {
-        final error = json.decode(response.body);
         return {
           'success': false,
-          'message': error['message'] ?? 'Failed to fetch users',
+          'message': 'Failed to fetch users: ${response.statusCode}'
         };
       }
     } catch (e) {
-      print('Get All Users Error: $e');
       return {
         'success': false,
-        'message': 'Failed to fetch users: $e',
+        'message': 'Error fetching users: $e'
       };
     }
   }
