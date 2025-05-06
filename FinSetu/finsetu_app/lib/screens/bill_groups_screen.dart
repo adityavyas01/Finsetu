@@ -15,7 +15,7 @@ class BillGroup {
     required this.lastActivity,
   });
 
-  // Factory constructor to create a BillGroup from API response
+  // Updated factory constructor to create a BillGroup from API response
   factory BillGroup.fromJson(Map<String, dynamic> json) {
     List<Person> membersList = [];
     if (json['members'] != null) {
@@ -351,6 +351,7 @@ class _BillGroupsScreenState extends State<BillGroupsScreen> {
       
       final response = await ApiService.createGroup(
         name: _newGroupNameController.text.trim(),
+        description: "Group created on ${DateTime.now().toLocal().toString().split(' ')[0]}", // Adding the required description parameter
         memberIds: memberIds,
       );
       
