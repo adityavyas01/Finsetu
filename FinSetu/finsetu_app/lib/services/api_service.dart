@@ -7,13 +7,22 @@ class ApiService {
   static const bool isDevelopment = true;
 
   static String get baseUrl {
-    if (kDebugMode) {
-      // In debug mode, use ngrok URL without /api/auth (it will be added in the endpoint)
-     return 'https://a77c-2409-40c4-33-b98c-4486-5b6b-ae2-243c.ngrok-free.app';
-    } else {
-      // In release mode, use production URL
-      return 'https://api.finsetu.com';
-    }
+    return isDevelopment
+        ? 'http://localhost:3000/api'
+        : 'https://your-production-url.com/api';
+  }
+
+  static void setUserId(String id) {
+    userId = id;
+    print('User ID set to: $userId');
+  }
+
+  static Map<String, String> get _headers {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (userId != null) 'X-User-ID': userId!,
+    };
   }
 
   // Register a new user
@@ -537,4 +546,4 @@ class ApiService {
   static void setToken(String token) {
     userToken = token;
   }
-} 
+}
