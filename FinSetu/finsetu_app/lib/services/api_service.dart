@@ -6,9 +6,6 @@ class ApiService {
   static String? _baseUrl;
   static String? _currentUserId;
 
-  static String get baseUrl => _baseUrl ?? '';
-  static String get currentUserId => _currentUserId ?? '';
-
   // Use different URLs for development and production
   static String get baseUrl {
     if (kDebugMode) {
