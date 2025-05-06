@@ -3,17 +3,28 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  // Use different URLs for development and production
+  static String? userId;
+  static const bool isDevelopment = true;
+
   static String get baseUrl {
-    if (kDebugMode) {
-      // In debug mode, use ngrok URL without /api/auth (it will be added in the endpoint)
-     return 'https://a77c-2409-40c4-33-b98c-4486-5b6b-ae2-243c.ngrok-free.app';
-    } else {
-      // In release mode, use production URL
-      return 'https://api.finsetu.com';
-    }
+    return isDevelopment
+        ? 'http://localhost:3000/api'
+        : 'https://your-production-url.com/api';
   }
-  
+
+  static void setUserId(String id) {
+    userId = id;
+    print('User ID set to: $userId');
+  }
+
+  static Map<String, String> get _headers {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (userId != null) 'X-User-ID': userId!,
+    };
+  }
+
   // Register a new user
   static Future<Map<String, dynamic>> registerUser({
     required String username,
@@ -21,55 +32,26 @@ class ApiService {
     required String password,
   }) async {
     try {
-      final url = '$baseUrl/api/auth/register';
-      print('=== API Registration Request ===');
-      print('URL: $url');
-      print('Username: $username');
-      print('Phone: $phoneNumber');
-      
       final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        Uri.parse('$baseUrl/auth/register'),
+        headers: _headers,
         body: jsonEncode({
           'username': username,
           'phoneNumber': phoneNumber,
           'password': password,
         }),
-      ).timeout(const Duration(seconds: 10));
+      );
 
-      print('=== API Registration Response ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        return {
-          'success': true,
-          'data': responseData,
-          'message': responseData['message'] ?? 'Registration successful',
-        };
-      } else {
-        String errorMessage;
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMessage = errorData['message'] ?? 'Registration failed';
-        } catch (e) {
-          errorMessage = 'Registration failed: Invalid response from server';
-        }
-        return {
-          'success': false,
-          'message': errorMessage,
-        };
-      }
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 201,
+        'data': responseData['data'],
+        'message': responseData['message'] ?? 'Registration successful',
+      };
     } catch (e) {
-      print('=== API Registration Error ===');
-      print('Error: $e');
       return {
         'success': false,
-        'message': 'Network error: ${e.toString()}',
+        'message': 'Network error: $e',
       };
     }
   }
@@ -180,102 +162,78 @@ class ApiService {
     required String password,
   }) async {
     try {
-      final url = '$baseUrl/api/auth/login';
-      print('=== API Login Request ===');
-      print('URL: $url');
-      print('Phone: $phoneNumber');
-      
       final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        Uri.parse('$baseUrl/auth/login'),
+        headers: _headers,
         body: jsonEncode({
           'phoneNumber': phoneNumber,
           'password': password,
         }),
-      ).timeout(const Duration(seconds: 10));
-
-      print('=== API Login Response ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        return {
-          'success': true,
-          'data': responseData,
-          'message': responseData['message'] ?? 'Login successful',
-        };
-      } else {
-        String errorMessage;
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMessage = errorData['message'] ?? 'Login failed';
-        } catch (e) {
-          errorMessage = 'Login failed: Invalid response from server';
+        if (responseData['data'] != null && responseData['data']['userId'] != null) {
+          setUserId(responseData['data']['userId'].toString());
+          print('User ID set to: ${responseData['data']['userId']}');
+        } else {
+          print('Warning: No user ID in response data');
+          print('Response data: $responseData');
         }
         return {
-          'success': false,
-          'message': errorMessage,
+          'success': true,
+          'data': responseData['data'],
+          'message': responseData['message'] ?? 'Login successful',
         };
       }
-    } catch (e) {
-      print('=== API Login Error ===');
-      print('Error: $e');
+
+      final responseData = jsonDecode(response.body);
       return {
         'success': false,
-        'message': 'Network error: ${e.toString()}',
+        'message': responseData['message'] ?? 'Login failed',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e',
       };
     }
   }
 
   // Get user's groups
   static Future<Map<String, dynamic>> getUserGroups() async {
-    try {
-      final url = '$baseUrl/api/groups';
-      print('=== Get User Groups Request ===');
-      print('URL: $url');
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $userToken', // You'll need to store the token after login
-        },
-      ).timeout(const Duration(seconds: 10));
+    if (userId == null) {
+      print('Error: No user ID available for fetching groups');
+      return {
+        'success': false,
+        'message': 'User not logged in',
+      };
+    }
 
-      print('=== Get User Groups Response ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/groups'),
+        headers: _headers,
+      );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
           'data': responseData['data'],
-        };
-      } else {
-        String errorMessage;
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMessage = errorData['message'] ?? 'Failed to fetch groups';
-        } catch (e) {
-          errorMessage = 'Failed to fetch groups: Invalid response from server';
-        }
-        return {
-          'success': false,
-          'message': errorMessage,
+          'message': responseData['message'] ?? 'Groups fetched successfully',
         };
       }
-    } catch (e) {
-      print('=== Get User Groups Error ===');
-      print('Error: $e');
+
+      final responseData = jsonDecode(response.body);
       return {
         'success': false,
-        'message': 'Network error: ${e.toString()}',
+        'message': responseData['message'] ?? 'Failed to fetch groups',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e',
       };
     }
   }
@@ -285,105 +243,77 @@ class ApiService {
     required String name,
     required List<String> memberIds,
   }) async {
+    if (userId == null) {
+      return {
+        'success': false,
+        'message': 'User not logged in',
+      };
+    }
+
     try {
-      final url = '$baseUrl/api/groups';
-      print('=== Create Group Request ===');
-      print('URL: $url');
-      print('Name: $name');
-      print('Members: $memberIds');
-      
       final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $userToken',
-        },
+        Uri.parse('$baseUrl/groups'),
+        headers: _headers,
         body: jsonEncode({
           'name': name,
-          'members': memberIds,
+          'memberIds': memberIds,
         }),
-      ).timeout(const Duration(seconds: 10));
-
-      print('=== Create Group Response ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      );
 
       if (response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
           'data': responseData['data'],
-          'message': responseData['message'],
-        };
-      } else {
-        String errorMessage;
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMessage = errorData['message'] ?? 'Failed to create group';
-        } catch (e) {
-          errorMessage = 'Failed to create group: Invalid response from server';
-        }
-        return {
-          'success': false,
-          'message': errorMessage,
+          'message': responseData['message'] ?? 'Group created successfully',
         };
       }
-    } catch (e) {
-      print('=== Create Group Error ===');
-      print('Error: $e');
+
+      final responseData = jsonDecode(response.body);
       return {
         'success': false,
-        'message': 'Network error: ${e.toString()}',
+        'message': responseData['message'] ?? 'Failed to create group',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e',
       };
     }
   }
 
   // Delete a group
   static Future<Map<String, dynamic>> deleteGroup(String groupId) async {
-    try {
-      final url = '$baseUrl/api/groups/$groupId';
-      print('=== Delete Group Request ===');
-      print('URL: $url');
-      
-      final response = await http.delete(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $userToken',
-        },
-      ).timeout(const Duration(seconds: 10));
+    if (userId == null) {
+      return {
+        'success': false,
+        'message': 'User not logged in',
+      };
+    }
 
-      print('=== Delete Group Response ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/groups/$groupId'),
+        headers: _headers,
+      );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
-          'message': responseData['message'],
-        };
-      } else {
-        String errorMessage;
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMessage = errorData['message'] ?? 'Failed to delete group';
-        } catch (e) {
-          errorMessage = 'Failed to delete group: Invalid response from server';
-        }
-        return {
-          'success': false,
-          'message': errorMessage,
+          'message': responseData['message'] ?? 'Group deleted successfully',
         };
       }
-    } catch (e) {
-      print('=== Delete Group Error ===');
-      print('Error: $e');
+
+      final responseData = jsonDecode(response.body);
       return {
         'success': false,
-        'message': 'Network error: ${e.toString()}',
+        'message': responseData['message'] ?? 'Failed to delete group',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e',
       };
     }
   }
