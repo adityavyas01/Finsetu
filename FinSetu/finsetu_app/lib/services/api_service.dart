@@ -7,7 +7,7 @@ class ApiService {
   static String get baseUrl {
     if (kDebugMode) {
       // In debug mode, use ngrok URL
-      return 'https://11e2-2409-40c4-ef-d547-4591-8a56-c763-d198.ngrok-free.app/api';
+      return 'https://f7e7-2409-40c4-ef-d547-4591-8a56-c763-d198.ngrok-free.app/api';
     } else {
       // In release mode, use production URL
       return 'https://api.finsetu.com/api';
